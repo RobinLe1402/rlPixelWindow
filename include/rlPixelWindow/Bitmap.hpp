@@ -35,7 +35,7 @@ namespace rlPixelWindow
 
 	public: // methods
 
-		Bitmap(Size iWidth, Size iHeight, const Pixel &pxInit = Colors::Blank);
+		Bitmap(Size iWidth, Size iHeight, const Pixel &pxInit = Color::Blank);
 		Bitmap(const Bitmap &other) noexcept;
 		Bitmap(Bitmap &&rval) noexcept;
 		~Bitmap() = default;

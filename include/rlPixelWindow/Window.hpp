@@ -47,6 +47,8 @@ namespace rlPixelWindow
 		using Pos       = int32_t;
 		using PixelSize = uint16_t;
 
+
+
 		static constexpr PixelSize MaxPixelSize = std::numeric_limits<PixelSize>::max();
 
 		enum class WinResizeMode
@@ -58,8 +60,13 @@ namespace rlPixelWindow
 
 		struct Config
 		{
-
 			std::wstring sTitle = L"RobinLe Pixel Window";
+
+			// The count of extra layers in addition to the base layer.
+			size_t iExtraLayers = 0;
+
+			// The background color. Must be fully opaque.
+			Pixel pxClearColor = Color::Black;
 
 			Size iWidth  = 1000;
 			Size iHeight = 500;
@@ -108,12 +115,12 @@ namespace rlPixelWindow
 
 	protected: // methods
 
-		virtual bool onStartup()  noexcept { return true; }
-		virtual bool onUpdate(double dElapsedSeconds) noexcept { return false; }
-		virtual bool onTryClose() noexcept { return true; }
-		virtual void onShutdown() noexcept {}
+		virtual bool onStartup() { return true; }
+		virtual bool onUpdate(double dElapsedSeconds) { return false; }
+		virtual bool onTryClose() { return true; }
+		virtual void onShutdown() {}
 
-		virtual bool tryResize(Size &iNewWidth, Size &iNewHeight) noexcept { return true; }
+		virtual bool tryResize(Size &iNewWidth, Size &iNewHeight) { return true; }
 		virtual bool tryDropFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
 		{
 			return false;
@@ -126,6 +133,13 @@ namespace rlPixelWindow
 
 		void setTitle(const wchar_t *szUnicode);
 		void setTitle(const char *szASCII);
+
+		size_t maxLayerCount() { return m_oLayers.max_size(); }
+
+		size_t layerCount() const noexcept { return m_oLayers.size() + 1; }
+
+		Bitmap &layer(size_t iIndex);
+		const Bitmap &layer(size_t iIndex) const;
 
 		auto width()  const noexcept { return m_iWidth; }
 		auto height() const noexcept { return m_iHeight; }
@@ -150,9 +164,11 @@ namespace rlPixelWindow
 	private: // variables
 
 		HWND m_hWnd = NULL;
-		bool m_bRunning = false;
 
+		bool m_bRunning       = false;
 		bool m_bAppCloseQuery = false;
+		double   m_dRuntime_SubMilliseconds = 0.0;
+		uint64_t m_iRuntime_Milliseconds    = 0;
 
 		std::chrono::time_point<std::chrono::system_clock> m_tpPast{};
 		std::chrono::time_point<std::chrono::system_clock> m_tpNow{};
@@ -162,8 +178,14 @@ namespace rlPixelWindow
 		PixelSize m_iPixelWidth  = 0;
 		PixelSize m_iPixelHeight = 0;
 
-		double   m_dRuntime_SubMilliseconds = 0.0;
-		uint64_t m_iRuntime_Milliseconds    = 0;
+		Size m_iMinWidth  = 0;
+		Size m_iMinHeight = 0;
+		Size m_iMaxWidth  = 0;
+		Size m_iMaxHeight = 0;
+
+		std::vector<std::unique_ptr<Bitmap>> m_oLayers;
+
+		Pixel m_pxClearColor = Color::Black;
 
 	};
 

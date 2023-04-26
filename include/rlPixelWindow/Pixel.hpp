@@ -57,7 +57,7 @@ namespace rlPixelWindow
 	/// <summary>
 	/// Predefined colors.
 	/// </summary>
-	namespace Colors
+	namespace Color
 	{
 		constexpr Pixel Blank = Pixel(); // A blank (fully transparent) pixel.
 		constexpr Pixel White = Pixel::ByRGB(0xFFFFFF);     // Opaque white.

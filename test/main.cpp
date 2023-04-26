@@ -10,7 +10,7 @@ class WindowImpl : public Window
 {
 protected: // methods
 
-	bool onUpdate(double dElapsedSeconds) noexcept override
+	bool onUpdate(double dElapsedSeconds) override
 	{
 		static auto iLastRuntimeSecs = runtimeMilliseconds() / 1000;
 		const auto iRuntimeSecs = runtimeMilliseconds() / 1000;

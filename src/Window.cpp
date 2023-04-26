@@ -80,6 +80,43 @@ namespace rlPixelWindow
 
 	bool Window::create(const Config &cfg)
 	{
+		destroy();
+
+		// check for generally invalid values
+		if (cfg.iExtraLayers >= m_oLayers.max_size() - 1 ||
+			cfg.iWidth   <= 0 || cfg.iHeight   <= 0 ||
+			cfg.iPxWidth <= 0 || cfg.iPxHeight <= 0 ||
+			cfg.iMinWidth < 0 || cfg.iMinHeight < 0 ||
+			cfg.iMaxWidth < 0 || cfg.iMaxHeight < 0 ||
+			cfg.pxClearColor.alpha != 0xFF)
+			return false;
+
+		// check for implausible values
+		if ((cfg.iMinWidth  > 0 && cfg.iMaxWidth  > 0 && cfg.iMinWidth  > cfg.iMaxWidth) ||
+			(cfg.iMinHeight > 0 && cfg.iMaxHeight > 0 && cfg.iMinHeight > cfg.iMaxHeight))
+			return false;
+
+		// todo: check for OS minimum size, set absolute maximum?
+
+		m_iWidth       = cfg.iWidth;
+		m_iHeight      = cfg.iHeight;
+		m_iPixelWidth  = cfg.iPxWidth;
+		m_iPixelHeight = cfg.iPxHeight;
+		m_iMinWidth    = cfg.iMinWidth;
+		m_iMinHeight   = cfg.iMinHeight;
+		m_iMaxWidth    = cfg.iMaxWidth;
+		m_iMaxHeight   = cfg.iMaxHeight;
+		m_oLayers.resize(cfg.iExtraLayers + 1);
+		for (auto &up : m_oLayers)
+			up = std::make_unique<Bitmap>(m_iWidth, m_iHeight);
+		m_pxClearColor = cfg.pxClearColor;
+
+		// todo: calc window size
+		// todo: apply minimum and maximum size
+		// todo: apply background color
+		// todo: add OpenGL drawing routine
+
+
 		this->RegisterWndClass();
 
 		DWORD dwStyle = WS_OVERLAPPEDWINDOW;
@@ -89,7 +126,10 @@ namespace rlPixelWindow
 		if (!CreateWindowW(szWNDCLASSNAME, cfg.sTitle.c_str(), dwStyle,
 			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL,
 			GetModuleHandle(NULL), this))
+		{
+			clear();
 			return false;
+		}
 
 		return true;
 	}
@@ -151,19 +191,46 @@ namespace rlPixelWindow
 		SetWindowTextA(m_hWnd, sASCII.c_str());
 	}
 
+	Bitmap &Window::layer(size_t iIndex)
+	{
+		if (iIndex >= m_oLayers.size())
+			throw std::exception("Invalid layer index used");
+
+		return *m_oLayers[iIndex];
+	}
+
+	const Bitmap &Window::layer(size_t iIndex) const
+	{
+		if (iIndex >= m_oLayers.size())
+			throw std::exception("Invalid layer index used");
+
+		return *m_oLayers[iIndex];
+	}
+
 	void Window::clear() noexcept
 	{
 		m_hWnd = NULL;
-		m_bRunning = false;
+		m_bRunning       = false;
 		m_bAppCloseQuery = false;
+		m_dRuntime_SubMilliseconds = 0.0;
+		m_iRuntime_Milliseconds    = 0;
+
 		m_tpPast = {};
 		m_tpPast = {};
+
 		m_iWidth  = 0;
 		m_iHeight = 0;
 		m_iPixelWidth  = 0;
 		m_iPixelHeight = 0;
-		m_dRuntime_SubMilliseconds = 0.0;
-		m_iRuntime_Milliseconds    = 0;
+
+		m_iMinWidth  = 0;
+		m_iMinHeight = 0;
+		m_iMaxWidth  = 0;
+		m_iMaxHeight = 0;
+
+		m_oLayers.clear();
+
+		m_pxClearColor = Color::Black;
 	}
 
 	void Window::destroy() noexcept
