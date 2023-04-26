@@ -204,6 +204,8 @@ namespace rlPixelWindow
 
 	LRESULT Window::localWndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
+		onOSMessage(uMsg, wParam, lParam);
+
 		switch (uMsg)
 		{
 		case WM_CLOSE:

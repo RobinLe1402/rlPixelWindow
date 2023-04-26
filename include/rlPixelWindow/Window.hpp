@@ -44,6 +44,7 @@ namespace rlPixelWindow
 	public: // types
 
 		using Size      = int32_t;
+		using Pos       = int32_t;
 		using PixelSize = uint16_t;
 
 		static constexpr PixelSize MaxPixelSize = std::numeric_limits<PixelSize>::max();
@@ -113,7 +114,14 @@ namespace rlPixelWindow
 		virtual void onShutdown() noexcept {}
 
 		virtual bool tryResize(Size &iNewWidth, Size &iNewHeight) noexcept { return true; }
-		virtual bool tryDropFiles(const std::vector<std::wstring> &oFiles) { return false; }
+		virtual bool tryDropFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
+		{
+			return false;
+		}
+
+		virtual void onOSMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {}
+
+
 
 
 		void setTitle(const wchar_t *szUnicode);
