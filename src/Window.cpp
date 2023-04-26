@@ -4,6 +4,10 @@
 #include <cmath>
 #include <string_view>
 
+// Win32
+#include <gl/GL.h>
+#pragma comment(lib, "Opengl32.lib")
+
 namespace rlPixelWindow
 {
 
@@ -266,15 +270,72 @@ namespace rlPixelWindow
 		}
 
 		if (!onUpdate(dMillisecondsPassed * 1000.0))
+		{
 			destroy();
+			return;
+		}
+		
+		glClear(GL_COLOR_BUFFER_BIT);
+		// todo: main drawing routine
+		SwapBuffers(GetDC(m_hWnd));
 	}
 
 	LRESULT Window::localWndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
+		if (m_hWnd == NULL)
+			return 0;
+
 		onOSMessage(uMsg, wParam, lParam);
 
 		switch (uMsg)
 		{
+		case WM_CREATE:
+			try
+			{
+				const HDC hDC = GetWindowDC(m_hWnd);
+
+				PIXELFORMATDESCRIPTOR pfd =
+				{
+					sizeof(PIXELFORMATDESCRIPTOR), 1,
+					PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+					PFD_TYPE_RGBA, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					PFD_MAIN_PLANE, 0, 0, 0, 0
+				};
+				int pf = ChoosePixelFormat(hDC, &pfd);
+				if (!SetPixelFormat(hDC, pf, &pfd))
+					throw 0;
+
+				m_hGLRC = wglCreateContext(hDC);
+				if (m_hGLRC == NULL)
+					throw 0;
+				if (!wglMakeCurrent(hDC, m_hGLRC))
+				{
+					wglDeleteContext(m_hGLRC);
+					m_hGLRC = 0;
+					throw 0;
+				}
+			}
+			catch (...)
+			{
+				DestroyWindow(m_hWnd);
+				return 0;
+			}
+
+			glViewport(0, 0,
+				m_iWidth  * m_iPixelWidth,
+				m_iHeight * m_iPixelHeight);
+			glClearColor(
+				m_pxClearColor.r / 255.0f,
+				m_pxClearColor.g / 255.0f,
+				m_pxClearColor.b / 255.0f,
+				1.0f);
+
+			glEnable(GL_TEXTURE_2D);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			break;
+
 		case WM_CLOSE:
 			if (!m_bAppCloseQuery && !onTryClose())
 				return 0;
@@ -283,8 +344,11 @@ namespace rlPixelWindow
 			break;
 
 		case WM_DESTROY:
-			PostQuitMessage(0);
+			wglDeleteContext(m_hGLRC);
+			m_hGLRC = NULL;
+			m_hWnd  = NULL;
 			m_bRunning = false;
+			PostQuitMessage(0);
 			break;
 		}
 

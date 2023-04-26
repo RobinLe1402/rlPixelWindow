@@ -85,7 +85,8 @@ bool TestBitmap()
 bool TestWindow()
 {
 	Window::Config cfg;
-	cfg.eWinResizeMode = Window::WinResizeMode::None;
+	//cfg.eWinResizeMode = Window::WinResizeMode::None;
+	cfg.pxClearColor = Pixel::ByRGB(0xFF00FF);
 
 	SetProcessDPIAware();
 

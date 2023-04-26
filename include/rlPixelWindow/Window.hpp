@@ -163,7 +163,8 @@ namespace rlPixelWindow
 
 	private: // variables
 
-		HWND m_hWnd = NULL;
+		HWND  m_hWnd  = NULL;
+		HGLRC m_hGLRC = NULL;
 
 		bool m_bRunning       = false;
 		bool m_bAppCloseQuery = false;
