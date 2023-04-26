@@ -12,6 +12,21 @@ protected: // methods
 
 	bool onUpdate(double dElapsedSeconds) noexcept override
 	{
+		static auto iLastRuntimeSecs = runtimeMilliseconds() / 1000;
+		const auto iRuntimeSecs = runtimeMilliseconds() / 1000;
+		if (iRuntimeSecs != iLastRuntimeSecs)
+		{
+			std::string sTitle = std::to_string(iRuntimeSecs);
+			sTitle += "s";
+
+			setTitle(sTitle.c_str());
+
+			iLastRuntimeSecs = iRuntimeSecs;
+		}
+
+		if (iRuntimeSecs >= 5)
+			return false;
+
 		return true;
 	}
 
@@ -70,6 +85,7 @@ bool TestBitmap()
 bool TestWindow()
 {
 	Window::Config cfg;
+	cfg.eWinResizeMode = Window::WinResizeMode::None;
 
 	SetProcessDPIAware();
 

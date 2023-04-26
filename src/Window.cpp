@@ -1,8 +1,8 @@
 #include <rlPixelWindow/Window.hpp>
 
 // STL
-#include <chrono>
 #include <cmath>
+#include <string_view>
 
 namespace rlPixelWindow
 {
@@ -49,8 +49,8 @@ namespace rlPixelWindow
 			WNDCLASSW wc{};
 			wc.lpfnWndProc   = GlobalWndProc;
 			wc.lpszClassName = szWNDCLASSNAME;
+			wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
 			wc.hInstance     = GetModuleHandle(NULL);
-			wc.hCursor       = LoadCursor(wc.hInstance, IDC_ARROW);
 			wc.style         = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
 
 			if (!RegisterClassW(&wc))
@@ -73,13 +73,20 @@ namespace rlPixelWindow
 		}
 	}
 
-
+	Window::~Window()
+	{
+		destroy();
+	}
 
 	bool Window::create(const Config &cfg)
 	{
 		this->RegisterWndClass();
 
-		if (!CreateWindowW(szWNDCLASSNAME, cfg.sTitle.c_str(), WS_OVERLAPPEDWINDOW,
+		DWORD dwStyle = WS_OVERLAPPEDWINDOW;
+		if (cfg.eWinResizeMode == WinResizeMode::None)
+			dwStyle &= ~(WS_SIZEBOX | WS_MAXIMIZEBOX);
+
+		if (!CreateWindowW(szWNDCLASSNAME, cfg.sTitle.c_str(), dwStyle,
 			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL,
 			GetModuleHandle(NULL), this))
 			return false;
@@ -113,23 +120,75 @@ namespace rlPixelWindow
 		} while (m_bRunning);
 
 	lbClose:
+		clear();
 		return true;
+	}
+
+	void Window::setTitle(const wchar_t *szUnicode)
+	{
+		if (m_hWnd)
+			SetWindowTextW(m_hWnd, szUnicode);
+	}
+
+	void Window::setTitle(const char *szASCII)
+	{
+		if (!m_hWnd)
+			return;
+
+		const std::string_view sv = szASCII;
+
+		// make sure the whole string is in ASCII only
+		std::string sASCII;
+		sASCII.reserve(sv.length());
+		for (char c : sv)
+		{
+			if (c ^ 0x80) // ASCII
+				sASCII += c;
+			else // non-ASCII
+				sASCII += '?';
+		}
+
+		SetWindowTextA(m_hWnd, sASCII.c_str());
+	}
+
+	void Window::clear() noexcept
+	{
+		m_hWnd = NULL;
+		m_bRunning = false;
+		m_bAppCloseQuery = false;
+		m_tpPast = {};
+		m_tpPast = {};
+		m_iWidth  = 0;
+		m_iHeight = 0;
+		m_iPixelWidth  = 0;
+		m_iPixelHeight = 0;
+		m_dRuntime_SubMilliseconds = 0.0;
+		m_iRuntime_Milliseconds    = 0;
+	}
+
+	void Window::destroy() noexcept
+	{
+		if (m_hWnd == NULL)
+			return;
+
+		m_bAppCloseQuery = true;
+		SendMessageW(m_hWnd, WM_CLOSE, 0, 0);
+
+		clear();
 	}
 
 	void Window::doUpdate() noexcept
 	{
-		static bool bFirstCall = true;
-		static std::chrono::time_point<std::chrono::system_clock> tpLast =
-			std::chrono::system_clock::now();
-		static std::chrono::time_point<std::chrono::system_clock> tpNew = tpLast;
+		m_tpNow = std::chrono::system_clock::now();
 
-		if (bFirstCall)
-			bFirstCall = false;
-		else
-			tpNew = std::chrono::system_clock::now();
+		if (m_tpPast == decltype(m_tpPast){})
+			m_tpPast = m_tpNow;
 
 		const double dMillisecondsPassed =
-			std::chrono::duration<double, std::milli>(tpNew - tpLast).count();
+			std::chrono::duration<double, std::milli>(m_tpNow - m_tpPast).count();
+
+		m_tpPast = m_tpNow;
+
 		m_dRuntime_SubMilliseconds += dMillisecondsPassed;
 		if (m_dRuntime_SubMilliseconds >= 1.0)
 		{
@@ -140,10 +199,7 @@ namespace rlPixelWindow
 		}
 
 		if (!onUpdate(dMillisecondsPassed * 1000.0))
-		{
-			m_bAppCloseQuery = true;
-			PostMessageW(m_hWnd, WM_CLOSE, 0, 0);
-		}
+			destroy();
 	}
 
 	LRESULT Window::localWndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)

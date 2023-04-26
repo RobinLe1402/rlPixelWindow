@@ -10,6 +10,7 @@
 #include "Bitmap.hpp"
 
 // STL
+#include <chrono>
 #include <map>
 #include <memory>
 #include <string>
@@ -87,6 +88,9 @@ namespace rlPixelWindow
 
 	public: // methods
 
+		Window() = default;
+		virtual ~Window();
+
 		/// <summary>
 		/// Create the window.
 		/// </summary>
@@ -112,6 +116,9 @@ namespace rlPixelWindow
 		virtual bool tryDropFiles(const std::vector<std::wstring> &oFiles) { return false; }
 
 
+		void setTitle(const wchar_t *szUnicode);
+		void setTitle(const char *szASCII);
+
 		auto width()  const noexcept { return m_iWidth; }
 		auto height() const noexcept { return m_iHeight; }
 
@@ -120,12 +127,14 @@ namespace rlPixelWindow
 
 		auto hWnd() const noexcept { return m_hWnd; }
 
-		auto runtimeMilliSeconds()    const noexcept { return m_iRuntime_Milliseconds; }
-		auto runtimeSubMilliSeconds() const noexcept { return m_dRuntime_SubMilliseconds; }
+		auto runtimeMilliseconds()    const noexcept { return m_iRuntime_Milliseconds; }
+		auto runtimeSubMilliseconds() const noexcept { return m_dRuntime_SubMilliseconds; }
 
 
 	private: // methods
 
+		void clear() noexcept;
+		void destroy() noexcept;
 		void doUpdate() noexcept;
 		LRESULT localWndProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -136,6 +145,9 @@ namespace rlPixelWindow
 		bool m_bRunning = false;
 
 		bool m_bAppCloseQuery = false;
+
+		std::chrono::time_point<std::chrono::system_clock> m_tpPast{};
+		std::chrono::time_point<std::chrono::system_clock> m_tpNow{};
 
 		Size m_iWidth  = 0;
 		Size m_iHeight = 0;
