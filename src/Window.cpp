@@ -282,9 +282,6 @@ namespace rlPixelWindow
 
 	LRESULT Window::localWndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
-		if (m_hWnd == NULL)
-			return 0;
-
 		onOSMessage(uMsg, wParam, lParam);
 
 		switch (uMsg)
@@ -346,7 +343,6 @@ namespace rlPixelWindow
 		case WM_DESTROY:
 			wglDeleteContext(m_hGLRC);
 			m_hGLRC = NULL;
-			m_hWnd  = NULL;
 			m_bRunning = false;
 			PostQuitMessage(0);
 			break;
