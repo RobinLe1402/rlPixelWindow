@@ -26,13 +26,12 @@ namespace rlPixelWindow
 	}
 
 	Bitmap::Bitmap(Bitmap &&rval) noexcept :
-		m_bChanged(rval.m_bChanged), m_iWidth(rval.m_iWidth), m_iHeight(rval.m_iHeight),
+		m_iWidth(rval.m_iWidth), m_iHeight(rval.m_iHeight),
 		m_upPixels(std::move(rval.m_upPixels))
 	{
 		if (!m_upPixels)
 			return;
 
-		rval.m_bChanged = false;
 		rval.m_iWidth   = 0;
 		rval.m_iHeight  = 0;
 	}
@@ -43,7 +42,6 @@ namespace rlPixelWindow
 			throw std::exception("Bitmap::setPixel called with invalid position");
 
 		m_upPixels[iY * m_iWidth + iX] = pxVal;
-		m_bChanged = true;
 	}
 
 	Pixel Bitmap::getPixel(Pos iX, Pos iY) const noexcept(false)
@@ -139,7 +137,6 @@ namespace rlPixelWindow
 
 		auto &px = m_upPixels[iY * m_iWidth + iX];
 		px = DrawPixelOnPixel(px, pxVal);
-		m_bChanged = true;
 	}
 
 }

@@ -54,9 +54,6 @@ namespace rlPixelWindow
 
 		void drawPixel(Pos iX, Pos iY, const Pixel &pxVal) noexcept(false);
 
-		bool changed() const noexcept { return m_bChanged; }
-		void validate() noexcept { m_bChanged = false; }
-
 		Pixel *scanline(Pos iY) noexcept
 		{
 			return (iY < 0 || iY >= m_iHeight) ? nullptr : m_upPixels.get() + iY * m_iWidth;
@@ -68,8 +65,6 @@ namespace rlPixelWindow
 
 
 	private: // variables
-
-		bool m_bChanged = true;
 
 		size_t m_iWidth  = 0;
 		size_t m_iHeight = 0;
