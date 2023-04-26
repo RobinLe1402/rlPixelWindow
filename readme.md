@@ -3,5 +3,8 @@
 This repo contains the static library `rlPixelWindow` which creates and manages windows with simple
 bitmap-based graphics.
 
-| :exclamation:  Work in progress. Do not use yet. |
-|--------------------------------------------------|
+| Category              | Value                     |
+|-----------------------|---------------------------|
+| Target Platform       | Windows 10+ x64           |
+| C++ Language Standard | ISO C++20                 |
+| VS Platform Toolset   | Visual Studio 2022 (v143) |
