@@ -28,24 +28,17 @@ namespace rlPixelWindow
 
 	class Window
 	{
-	private: // static methods
-
-		static LRESULT CALLBACK GlobalWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-		static void RegisterWndClass();
-		static void UnregisterWndClass();
-
-
-	private: // static variables
-
-		static std::map<HWND, Window *> s_oWindows;
-		static size_t s_iWndClassRefCount;
-
-
 	public: // types
 
 		using Size      = int32_t;
 		using Pos       = int32_t;
 		using PixelSize = uint16_t;
+
+		struct SizeStruct
+		{
+			Size iX;
+			Size iY;
+		};
 
 
 
@@ -79,6 +72,8 @@ namespace rlPixelWindow
 			// The resize mode.
 			// The meaning of minimum and maximum values depend on this value.
 			WinResizeMode eWinResizeMode = WinResizeMode::Canvas;
+			bool bMaximizable = true;
+			bool bMinimizable = true;
 
 			// Resize constraints.
 			// A value of 0 indicates "no (custom) limit".
@@ -92,6 +87,31 @@ namespace rlPixelWindow
 			Size iMaxWidth  = 0;
 			Size iMaxHeight = 0;
 		};
+
+
+
+	protected: // static methods
+
+		static DWORD GetStyle(bool bResizable, bool bMaximizable,
+			bool bMinimizable = true, bool bMaximized = false);
+		static SizeStruct MinSize(PixelSize iPixelWidth, PixelSize iPixelHeight,
+			bool bResizable, bool bMaximizable, bool bMinimizable);
+
+
+	private: // static methods
+
+		static LRESULT CALLBACK GlobalWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		static void RegisterWndClass();
+		static void UnregisterWndClass();
+
+
+	private: // static variables
+
+		static std::map<HWND, Window *> s_oWindows;
+		static size_t s_iWndClassRefCount;
+
+		static const Size s_iOSMinWinWidth;
+		static const Size s_iOSMinWinHeight;
 
 
 	public: // methods
@@ -157,8 +177,11 @@ namespace rlPixelWindow
 
 		void clear() noexcept;
 		void destroy() noexcept;
+
 		void doUpdate() noexcept;
 		LRESULT localWndProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+		void handleResize(Size iClientWidth, Size iClientHeight);
 
 
 	private: // variables

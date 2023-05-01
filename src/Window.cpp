@@ -5,6 +5,7 @@
 #include <string_view>
 
 // Win32
+#include <windowsx.h>
 #include <gl/GL.h>
 #pragma comment(lib, "Opengl32.lib")
 
@@ -19,8 +20,60 @@ namespace rlPixelWindow
 
 	std::map<HWND, Window *> Window::s_oWindows;
 	size_t Window::s_iWndClassRefCount;
+	const Window::Size Window::s_iOSMinWinWidth  = GetSystemMetrics(SM_CXMIN);
+	const Window::Size Window::s_iOSMinWinHeight = GetSystemMetrics(SM_CYMIN);
 
 
+
+	DWORD Window::GetStyle(bool bResizable, bool bMaximizable, bool bMinimizable,
+		bool bMaximized)
+	{
+		DWORD dwStyle = WS_OVERLAPPEDWINDOW;
+
+		if (!bResizable)
+			dwStyle &= ~WS_SIZEBOX;
+		if (!bMaximizable)
+			dwStyle &= ~WS_MAXIMIZEBOX;
+		if (!bMinimizable)
+			dwStyle &= ~WS_MINIMIZEBOX;
+		if (bMaximized)
+			dwStyle &= WS_MAXIMIZE;
+
+		return dwStyle;
+	}
+
+	Window::SizeStruct Window::MinSize(PixelSize iPixelWidth, PixelSize iPixelHeight,
+		bool bResizable, bool bMaximizable, bool bMinimizable)
+	{
+		const DWORD dwStyle = GetStyle(bResizable, bMaximizable, bMinimizable);
+		RECT rect{};
+		AdjustWindowRect(&rect, dwStyle, FALSE);
+
+		const auto iFrameWidth  = rect.right - rect.left;
+		const auto iFrameHeight = rect.bottom - rect.top;
+
+		const auto iMinClientWidth  = s_iOSMinWinWidth - iFrameWidth;
+		const auto iMinClientHeight = s_iOSMinWinHeight - iFrameHeight;
+
+
+		SizeStruct result{};
+
+		result.iX = Size(iMinClientWidth / iPixelWidth);
+		if (iMinClientWidth % iPixelWidth)
+			++result.iX;
+		result.iY = Size(iMinClientHeight / iPixelHeight);
+		if (iMinClientHeight % iPixelHeight)
+			++result.iY;
+
+
+		// make sure it's not 0x? or ?x0 pixels
+		if (result.iX <= 0)
+			result.iX  = 1;
+		if (result.iY <= 0)
+			result.iY  = 1;
+
+		return result;
+	}
 
 	LRESULT CALLBACK Window::GlobalWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
@@ -97,10 +150,20 @@ namespace rlPixelWindow
 
 		// check for implausible values
 		if ((cfg.iMinWidth  > 0 && cfg.iMaxWidth  > 0 && cfg.iMinWidth  > cfg.iMaxWidth) ||
-			(cfg.iMinHeight > 0 && cfg.iMaxHeight > 0 && cfg.iMinHeight > cfg.iMaxHeight))
+			(cfg.iMinHeight > 0 && cfg.iMaxHeight > 0 && cfg.iMinHeight > cfg.iMaxHeight) ||
+			(cfg.iMinWidth  > 0 && cfg.iWidth  < cfg.iMinWidth)  ||
+			(cfg.iMinHeight > 0 && cfg.iHeight < cfg.iMinHeight) ||
+			(cfg.iMaxWidth  > 0 && cfg.iWidth  > cfg.iMaxWidth)  ||
+			(cfg.iMaxHeight > 0 && cfg.iHeight > cfg.iMaxHeight))
 			return false;
 
-		// todo: check for OS minimum size, set absolute maximum?
+		// check absolute minimum size
+		const auto oMinSize = MinSize(cfg.iPxWidth, cfg.iPxHeight,
+			cfg.eWinResizeMode != WinResizeMode::None, cfg.bMaximizable, cfg.bMinimizable);
+		if (cfg.iWidth < oMinSize.iX || cfg.iHeight < oMinSize.iY)
+			return false; // todo: enforce absolute minimum window size at runtime
+
+		// todo: set absolute maximum?
 
 		m_iWidth       = cfg.iWidth;
 		m_iHeight      = cfg.iHeight;
@@ -333,6 +396,29 @@ namespace rlPixelWindow
 
 			break;
 
+
+
+		case WM_SIZE:
+			switch (wParam)
+			{
+			case SIZE_MINIMIZED:
+				// todo: On Minimize
+				break;
+
+			case SIZE_MAXIMIZED:
+				handleResize(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				// todo: On Maximize
+				break;
+
+			case SIZE_RESTORED:
+				handleResize(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				// todo: On Restored
+				break;
+			}
+			break;
+
+
+
 		case WM_CLOSE:
 			if (!m_bAppCloseQuery && !onTryClose())
 				return 0;
@@ -349,6 +435,53 @@ namespace rlPixelWindow
 		}
 
 		return DefWindowProc(m_hWnd, uMsg, wParam, lParam);
+	}
+
+	void Window::handleResize(Size iClientWidth, Size iClientHeight)
+	{
+		Size iWidth  = iClientWidth  / m_iPixelWidth;
+		Size iHeight = iClientHeight / m_iPixelHeight;
+
+
+		if (iWidth == m_iWidth && iHeight == m_iHeight)
+			return; // do nothing
+
+		if (m_iMaxWidth  > 0 && iWidth  > m_iMaxWidth)
+			iWidth  = m_iMaxWidth;
+		if (m_iMaxHeight > 0 && iHeight > m_iMaxHeight)
+			iHeight = m_iMaxHeight;
+
+		for (size_t i = 0; i < m_oLayers.size(); ++i)
+		{
+			auto  upNew = std::make_unique<Bitmap>(iWidth, iHeight);
+			auto &upOld = m_oLayers[i];
+
+			const Size   iCompatibleWidth  = std::min(m_iWidth,  iWidth);
+			const Size   iCompatibleHeight = std::min(m_iHeight, iHeight);
+			const size_t iCompatibleBytes  = iCompatibleWidth * sizeof(Pixel);
+
+			auto pNew = upNew->scanline(0);
+			auto pOld = upOld->scanline(0);
+
+			for (Size iY = 0; iY < iCompatibleHeight; ++iY)
+			{
+				memcpy_s(pNew, iCompatibleBytes, pOld, iCompatibleBytes);
+				pNew += iWidth;
+				pOld += m_iWidth;
+			}
+
+			upOld = std::move(upNew);
+			//glBindTexture(GL_TEXTURE_2D, /* Texture ID */);
+			//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iWidth, iHeight, 0, GL_RGBA,
+			//	GL_UNSIGNED_BYTE, upOld.get());
+		}
+		m_iWidth  = iWidth;
+		m_iHeight = iHeight;
+
+		glViewport(0, iClientHeight - m_iHeight * m_iPixelHeight,
+			m_iWidth  * m_iPixelWidth,
+			m_iHeight * m_iPixelHeight);
+		doUpdate();
 	}
 
 }

@@ -12,7 +12,7 @@ protected: // methods
 
 	bool onUpdate(double dElapsedSeconds) override
 	{
-		static auto iLastRuntimeSecs = runtimeMilliseconds() / 1000;
+		/*static auto iLastRuntimeSecs = runtimeMilliseconds() / 1000;
 		const auto iRuntimeSecs = runtimeMilliseconds() / 1000;
 		if (iRuntimeSecs != iLastRuntimeSecs)
 		{
@@ -25,7 +25,7 @@ protected: // methods
 		}
 
 		if (iRuntimeSecs >= 5)
-			return false;
+			return false;*/
 
 		return true;
 	}
