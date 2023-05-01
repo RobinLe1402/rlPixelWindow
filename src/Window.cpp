@@ -42,10 +42,8 @@ namespace rlPixelWindow
 		return dwStyle;
 	}
 
-	Window::SizeStruct Window::MinSize(PixelSize iPixelWidth, PixelSize iPixelHeight,
-		bool bResizable, bool bMaximizable, bool bMinimizable)
+	Window::SizeStruct Window::MinSize(PixelSize iPixelWidth, PixelSize iPixelHeight, DWORD dwStyle)
 	{
-		const DWORD dwStyle = GetStyle(bResizable, bMaximizable, bMinimizable);
 		RECT rect{};
 		AdjustWindowRect(&rect, dwStyle, FALSE);
 
@@ -159,9 +157,12 @@ namespace rlPixelWindow
 
 		// check absolute minimum size
 		const auto oMinSize = MinSize(cfg.iPxWidth, cfg.iPxHeight,
-			cfg.eWinResizeMode != WinResizeMode::None, cfg.bMaximizable, cfg.bMinimizable);
-		if (cfg.iWidth < oMinSize.iX || cfg.iHeight < oMinSize.iY)
-			return false; // todo: enforce absolute minimum window size at runtime
+			GetStyle(cfg.eWinResizeMode != WinResizeMode::None, cfg.bMaximizable, cfg.bMinimizable)
+		);
+		if (cfg.iWidth < oMinSize.iX || cfg.iHeight < oMinSize.iY ||
+			(cfg.iMaxWidth  > 0 && cfg.iMaxWidth  < oMinSize.iX) ||
+			(cfg.iMaxHeight > 0 && cfg.iMaxHeight < oMinSize.iY))
+			return false;
 
 		// todo: set absolute maximum?
 
@@ -416,6 +417,42 @@ namespace rlPixelWindow
 				break;
 			}
 			break;
+
+
+
+		case WM_GETMINMAXINFO:
+		{
+			const DWORD dwStyle = GetWindowStyle(m_hWnd);
+			if (dwStyle & WS_MAXIMIZE)
+				break; // always maximize "properly"
+
+			RECT rect{};
+			AdjustWindowRect(&rect, dwStyle, FALSE);
+			const auto iFrameWidth  = rect.right - rect.left;
+			const auto iFrameHeight = rect.bottom - rect.top;
+
+			auto &mmi = *reinterpret_cast<LPMINMAXINFO>(lParam);
+
+			SizeStruct oEnforcedMin = MinSize(m_iPixelWidth, m_iPixelHeight, dwStyle);
+			oEnforcedMin.iX = std::max(oEnforcedMin.iX, m_iMinWidth);
+			oEnforcedMin.iY = std::max(oEnforcedMin.iY, m_iMinHeight);
+
+			// minimum
+			mmi.ptMinTrackSize =
+			{
+				.x = oEnforcedMin.iX * m_iPixelWidth  + iFrameWidth,
+				.y = oEnforcedMin.iY * m_iPixelHeight + iFrameHeight
+			};
+
+			// maximum
+			if (m_iMaxWidth > 0)
+				mmi.ptMaxTrackSize.x =
+				m_iMaxWidth * m_iPixelWidth + iFrameWidth;
+			if (m_iMaxHeight > 0)
+				mmi.ptMaxTrackSize.y =
+				m_iMaxHeight * m_iPixelHeight + iFrameHeight;
+		}
+		break;
 
 
 

@@ -94,8 +94,7 @@ namespace rlPixelWindow
 
 		static DWORD GetStyle(bool bResizable, bool bMaximizable,
 			bool bMinimizable = true, bool bMaximized = false);
-		static SizeStruct MinSize(PixelSize iPixelWidth, PixelSize iPixelHeight,
-			bool bResizable, bool bMaximizable, bool bMinimizable);
+		static SizeStruct MinSize(PixelSize iPixelWidth, PixelSize iPixelHeight, DWORD dwStyle);
 
 
 	private: // static methods
