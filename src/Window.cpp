@@ -351,6 +351,7 @@ namespace rlPixelWindow
 		switch (uMsg)
 		{
 		case WM_CREATE:
+		#pragma region
 			try
 			{
 				const HDC hDC = GetWindowDC(m_hWnd);
@@ -395,7 +396,57 @@ namespace rlPixelWindow
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+			#pragma endregion
 			break;
+
+
+
+		case WM_SIZING:
+		#pragma region
+		{
+			RECT &rect = *reinterpret_cast<RECT *>(lParam);
+			RECT rectFrame{};
+			AdjustWindowRect(&rectFrame, GetWindowLong(m_hWnd, GWL_STYLE), FALSE);
+			const RECT rectClient
+			{
+				.left   = rect.left - rectFrame.left,
+				.top    = rect.top - rectFrame.top,
+				.right  = rect.right - rectFrame.right,
+				.bottom = rect.bottom - rectFrame.bottom
+			};
+
+			const auto iClientWidth  = rectClient.right - rectClient.left;
+			const auto iClientHeight = rectClient.bottom - rectClient.top;
+
+			const bool bRight  =
+				wParam == WMSZ_RIGHT || wParam == WMSZ_TOPRIGHT || wParam == WMSZ_BOTTOMRIGHT;
+			const bool bBottom =
+				wParam == WMSZ_BOTTOM || wParam == WMSZ_BOTTOMLEFT || wParam == WMSZ_BOTTOMRIGHT;
+
+			const int iDiffX = iClientWidth % m_iPixelWidth;
+			const int iDiffY = iClientHeight % m_iPixelHeight;
+
+
+			// todo: ask user for permission to resize
+
+
+			if (iDiffX)
+			{
+				if (bRight)
+					rect.right -= iDiffX;
+				else
+					rect.left  += iDiffX;
+			}
+			if (iDiffY)
+			{
+				if (bBottom)
+					rect.bottom -= iDiffY;
+				else
+					rect.top    += iDiffY;
+			}
+		}
+		#pragma endregion
+			return TRUE;
 
 
 
@@ -421,6 +472,7 @@ namespace rlPixelWindow
 
 
 		case WM_GETMINMAXINFO:
+		#pragma region
 		{
 			const DWORD dwStyle = GetWindowStyle(m_hWnd);
 			if (dwStyle & WS_MAXIMIZE)
@@ -452,7 +504,8 @@ namespace rlPixelWindow
 				mmi.ptMaxTrackSize.y =
 				m_iMaxHeight * m_iPixelHeight + iFrameHeight;
 		}
-		break;
+		#pragma endregion
+			break;
 
 
 

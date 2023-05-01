@@ -87,6 +87,8 @@ bool TestWindow()
 	Window::Config cfg;
 	//cfg.eWinResizeMode = Window::WinResizeMode::None;
 	cfg.pxClearColor = Pixel::ByRGB(0xFF00FF);
+	cfg.iPxWidth  = 5;
+	cfg.iPxHeight = 4;
 
 	SetProcessDPIAware();
 
