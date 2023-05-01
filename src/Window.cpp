@@ -179,20 +179,29 @@ namespace rlPixelWindow
 			up = std::make_unique<Bitmap>(m_iWidth, m_iHeight);
 		m_pxClearColor = cfg.pxClearColor;
 
-		// todo: calc window size
-		// todo: apply minimum and maximum size
-		// todo: apply background color
 		// todo: add OpenGL drawing routine
 
 
 		this->RegisterWndClass();
 
-		DWORD dwStyle = WS_OVERLAPPEDWINDOW;
-		if (cfg.eWinResizeMode == WinResizeMode::None)
-			dwStyle &= ~(WS_SIZEBOX | WS_MAXIMIZEBOX);
+		DWORD dwStyle = GetStyle(cfg.eWinResizeMode != WinResizeMode::None,
+			cfg.bMaximizable, cfg.bMinimizable);
+		RECT rc =
+		{
+			.left   = 0,
+			.top    = 0,
+			.right  = m_iWidth  * m_iPixelWidth,
+			.bottom = m_iHeight * m_iPixelHeight
+		};
+		if (!AdjustWindowRect(&rc, dwStyle, FALSE))
+		{
+			this->UnregisterWndClass();
+			clear();
+			return false;
+		}
 
 		if (!CreateWindowW(szWNDCLASSNAME, cfg.sTitle.c_str(), dwStyle,
-			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL,
+			CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, NULL, NULL,
 			GetModuleHandle(NULL), this))
 		{
 			clear();

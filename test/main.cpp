@@ -89,6 +89,8 @@ bool TestWindow()
 	cfg.pxClearColor = Pixel::ByRGB(0xFF00FF);
 	cfg.iPxWidth  = 5;
 	cfg.iPxHeight = 4;
+	cfg.iWidth  = 256;
+	cfg.iHeight = 240;
 
 	SetProcessDPIAware();
 
