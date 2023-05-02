@@ -88,6 +88,42 @@ namespace rlPixelWindow
 			Size iMaxHeight = 0;
 		};
 
+		class Layer final
+		{
+			friend class Window;
+
+
+		public: // methods
+
+			Layer() = default;
+			Layer(Layer &&rval) = default;
+			~Layer();
+
+			bool invalid() const { return m_bInvalid; }
+			void invalidate()    { m_bInvalid = true; }
+
+			const Bitmap &bitmap() const { return *m_upBitmap; }
+			Bitmap       &bitmap()       { return *m_upBitmap; }
+
+			auto textureID() const { return m_iTexID; }
+
+
+		private: // methods
+
+			void create(Size iWidth, Size iHeight, bool bKeepOldData = false);
+			void destroy();
+
+			void validate();
+
+
+		private: // variables
+
+			std::unique_ptr<Bitmap> m_upBitmap;
+			bool     m_bInvalid = true;
+			unsigned m_iTexID   = 0;
+
+		};
+
 
 
 	protected: // static methods
@@ -157,8 +193,8 @@ namespace rlPixelWindow
 
 		size_t layerCount() const noexcept { return m_oLayers.size() + 1; }
 
-		Bitmap &layer(size_t iIndex);
-		const Bitmap &layer(size_t iIndex) const;
+		Layer       &layer(size_t iIndex);
+		const Layer &layer(size_t iIndex) const;
 
 		auto width()  const noexcept { return m_iWidth; }
 		auto height() const noexcept { return m_iHeight; }
@@ -206,7 +242,7 @@ namespace rlPixelWindow
 		Size m_iMaxWidth  = 0;
 		Size m_iMaxHeight = 0;
 
-		std::vector<std::unique_ptr<Bitmap>> m_oLayers;
+		std::vector<Layer> m_oLayers;
 
 		Pixel m_pxClearColor = Color::Black;
 

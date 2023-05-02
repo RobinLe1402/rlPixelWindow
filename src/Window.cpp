@@ -12,6 +12,95 @@
 namespace rlPixelWindow
 {
 
+	Window::Layer::~Layer()
+	{
+		destroy();
+
+		const GLuint i = m_iTexID;
+		glDeleteTextures(1, &i);
+	}
+
+	void Window::Layer::create(Size iWidth, Size iHeight, bool bKeepOldData)
+	{
+		if (m_iTexID == 0)
+		{
+			GLuint iTexID;
+			glGenTextures(1, &iTexID);
+			m_iTexID = iTexID;
+
+			glBindTexture(GL_TEXTURE_2D, iTexID);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		}
+
+		if (!m_upBitmap)
+			bKeepOldData = false;
+
+		glBindTexture(GL_TEXTURE_2D, m_iTexID);
+
+		// size has not changed
+		if (m_upBitmap && m_upBitmap->width() == iWidth && m_upBitmap->height() == iHeight)
+		{
+			if (!bKeepOldData)
+			{
+				m_upBitmap->clear();
+				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, iWidth, iHeight, GL_RGBA, GL_UNSIGNED_BYTE,
+					m_upBitmap->data()); // cleared --> doesn't have to be flipped
+				m_bInvalid = false;
+			}
+
+			return;
+		}
+
+		auto upNewBitmap = std::make_unique<Bitmap>(iWidth, iHeight);
+
+		if (bKeepOldData)
+		{
+			const auto iCompatibleWidth  = std::min(iWidth, m_upBitmap->width());
+			const auto iCompatibleHeight = std::min(iHeight, m_upBitmap->height());
+
+			const auto iCompatibleRowSize = iCompatibleWidth * sizeof(Pixel);
+
+			Pixel *pDest = upNewBitmap->data();
+			const Pixel *pSrc  = m_upBitmap->data();
+			for (size_t iY = 0; iY < iCompatibleHeight; ++iY)
+			{
+				memcpy_s(pDest, iCompatibleRowSize, pSrc, iCompatibleRowSize);
+				pDest += iWidth;
+				pSrc  += m_upBitmap->width();
+			}
+		}
+
+		m_upBitmap = std::move(upNewBitmap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iWidth, iHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+			m_upBitmap->data());
+		m_bInvalid = false;
+	}
+
+	void Window::Layer::destroy()
+	{
+		if (!m_upBitmap)
+			return;
+
+		m_upBitmap = nullptr;
+		m_bInvalid = true;
+	}
+
+	void Window::Layer::validate()
+	{
+		if (!m_bInvalid)
+			return; // not invalid
+
+		// upload the texture
+		glBindTexture(GL_TEXTURE_2D, m_iTexID);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+			m_upBitmap->width(), m_upBitmap->height(), GL_RGBA, GL_UNSIGNED_BYTE,
+			m_upBitmap->data());
+	}
+
+
+
 	namespace
 	{
 		constexpr wchar_t szWNDCLASSNAME[] = L"rlPixelWindow";
@@ -174,9 +263,7 @@ namespace rlPixelWindow
 		m_iMinHeight   = cfg.iMinHeight;
 		m_iMaxWidth    = cfg.iMaxWidth;
 		m_iMaxHeight   = cfg.iMaxHeight;
-		m_oLayers.resize(cfg.iExtraLayers + 1);
-		for (auto &up : m_oLayers)
-			up = std::make_unique<Bitmap>(m_iWidth, m_iHeight);
+		m_oLayers.resize(cfg.iExtraLayers + 1); // initialized in WM_CREATE
 		m_pxClearColor = cfg.pxClearColor;
 
 		// todo: add OpenGL drawing routine
@@ -268,20 +355,20 @@ namespace rlPixelWindow
 		SetWindowTextA(m_hWnd, sASCII.c_str());
 	}
 
-	Bitmap &Window::layer(size_t iIndex)
+	Window::Layer &Window::layer(size_t iIndex)
 	{
 		if (iIndex >= m_oLayers.size())
 			throw std::exception("Invalid layer index used");
 
-		return *m_oLayers[iIndex];
+		return m_oLayers[iIndex];
 	}
 
-	const Bitmap &Window::layer(size_t iIndex) const
+	const Window::Layer &Window::layer(size_t iIndex) const
 	{
 		if (iIndex >= m_oLayers.size())
 			throw std::exception("Invalid layer index used");
 
-		return *m_oLayers[iIndex];
+		return m_oLayers[iIndex];
 	}
 
 	void Window::clear() noexcept
@@ -347,9 +434,24 @@ namespace rlPixelWindow
 			destroy();
 			return;
 		}
-		
+
 		glClear(GL_COLOR_BUFFER_BIT);
-		// todo: main drawing routine
+		for (auto &oLayer : m_oLayers)
+		{
+			oLayer.validate();
+
+			glBindTexture(GL_TEXTURE_2D, oLayer.textureID());
+
+			// draw texture (full width and height, but upside down)
+			glBegin(GL_QUADS);
+			{
+				glTexCoord2f(0.0, 1.0);	glVertex3f(-1.0f, -1.0f, 0.0f);
+				glTexCoord2f(0.0, 0.0);	glVertex3f(-1.0f, 1.0f, 0.0f);
+				glTexCoord2f(1.0, 0.0);	glVertex3f(1.0f, 1.0f, 0.0f);
+				glTexCoord2f(1.0, 1.0);	glVertex3f(1.0f, -1.0f, 0.0f);
+			}
+			glEnd();
+		}
 		SwapBuffers(GetDC(m_hWnd));
 	}
 
@@ -405,7 +507,12 @@ namespace rlPixelWindow
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			#pragma endregion
+			for (auto &up : m_oLayers)
+			{
+				up.create(m_iWidth, m_iHeight);
+			}
+
+		#pragma endregion
 			break;
 
 
@@ -552,27 +659,7 @@ namespace rlPixelWindow
 
 		for (size_t i = 0; i < m_oLayers.size(); ++i)
 		{
-			auto  upNew = std::make_unique<Bitmap>(iWidth, iHeight);
-			auto &upOld = m_oLayers[i];
-
-			const Size   iCompatibleWidth  = std::min(m_iWidth,  iWidth);
-			const Size   iCompatibleHeight = std::min(m_iHeight, iHeight);
-			const size_t iCompatibleBytes  = iCompatibleWidth * sizeof(Pixel);
-
-			auto pNew = upNew->scanline(0);
-			auto pOld = upOld->scanline(0);
-
-			for (Size iY = 0; iY < iCompatibleHeight; ++iY)
-			{
-				memcpy_s(pNew, iCompatibleBytes, pOld, iCompatibleBytes);
-				pNew += iWidth;
-				pOld += m_iWidth;
-			}
-
-			upOld = std::move(upNew);
-			//glBindTexture(GL_TEXTURE_2D, /* Texture ID */);
-			//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iWidth, iHeight, 0, GL_RGBA,
-			//	GL_UNSIGNED_BYTE, upOld.get());
+			m_oLayers[i].create(iWidth, iHeight, true);
 		}
 		m_iWidth  = iWidth;
 		m_iHeight = iHeight;

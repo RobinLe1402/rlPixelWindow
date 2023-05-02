@@ -27,6 +27,10 @@ protected: // methods
 		if (iRuntimeSecs >= 5)
 			return false;*/
 
+		layer(0).bitmap().clear();
+		layer(0).bitmap().setPixel(width() - 1, height() - 1, Color::White);
+		layer(0).invalidate();
+
 		return true;
 	}
 
@@ -87,10 +91,10 @@ bool TestWindow()
 	Window::Config cfg;
 	//cfg.eWinResizeMode = Window::WinResizeMode::None;
 	cfg.pxClearColor = Pixel::ByRGB(0xFF00FF);
-	cfg.iPxWidth  = 5;
-	cfg.iPxHeight = 4;
-	cfg.iWidth  = 256;
-	cfg.iHeight = 240;
+	cfg.iPxWidth  = 5 * 2;
+	cfg.iPxHeight = 4 * 2;
+	cfg.iWidth  = 256 / 2;
+	cfg.iHeight = 240 / 2;
 
 	SetProcessDPIAware();
 
