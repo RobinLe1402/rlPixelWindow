@@ -114,19 +114,27 @@ namespace rlPixelWindow
 
 
 
-	DWORD Window::GetStyle(bool bResizable, bool bMaximizable, bool bMinimizable,
-		bool bMaximized)
+	DWORD Window::GetStyle(bool bResizable, bool bMaximizable, bool bMinimizable, State eState)
 	{
 		DWORD dwStyle = WS_OVERLAPPEDWINDOW;
 
-		if (!bResizable)
-			dwStyle &= ~WS_SIZEBOX;
-		if (!bMaximizable)
-			dwStyle &= ~WS_MAXIMIZEBOX;
-		if (!bMinimizable)
-			dwStyle &= ~WS_MINIMIZEBOX;
-		if (bMaximized)
-			dwStyle &= WS_MAXIMIZE;
+		switch (eState)
+		{
+		case State::Maximized:
+			dwStyle |= WS_MAXIMIZE;
+			[[fallthrough]];
+		case State::Normal:
+			if (!bResizable)
+				dwStyle &= ~WS_SIZEBOX;
+			if (!bMaximizable)
+				dwStyle &= ~WS_MAXIMIZEBOX;
+			if (!bMinimizable)
+				dwStyle &= ~WS_MINIMIZEBOX;
+			break;
+
+		case State::Fullscreen:
+			return WS_POPUP | WS_VISIBLE;
+		}
 
 		return dwStyle;
 	}
@@ -246,7 +254,8 @@ namespace rlPixelWindow
 
 		// check absolute minimum size
 		const auto oMinSize = MinSize(cfg.iPxWidth, cfg.iPxHeight,
-			GetStyle(cfg.eWinResizeMode != WinResizeMode::None, cfg.bMaximizable, cfg.bMinimizable)
+			GetStyle(cfg.eWinResizeMode != ResizeMode::None, cfg.bMaximizable, cfg.bMinimizable,
+				cfg.eState)
 		);
 		if (cfg.iWidth < oMinSize.iX || cfg.iHeight < oMinSize.iY ||
 			(cfg.iMaxWidth  > 0 && cfg.iMaxWidth  < oMinSize.iX) ||
@@ -266,13 +275,11 @@ namespace rlPixelWindow
 		m_oLayers.resize(cfg.iExtraLayers + 1); // initialized in WM_CREATE
 		m_pxClearColor = cfg.pxClearColor;
 
-		// todo: add OpenGL drawing routine
-
 
 		this->RegisterWndClass();
 
-		DWORD dwStyle = GetStyle(cfg.eWinResizeMode != WinResizeMode::None,
-			cfg.bMaximizable, cfg.bMinimizable);
+		DWORD dwStyle = GetStyle(cfg.eWinResizeMode != ResizeMode::None,
+			cfg.bMaximizable, cfg.bMinimizable, cfg.eState);
 		RECT rc =
 		{
 			.left   = 0,

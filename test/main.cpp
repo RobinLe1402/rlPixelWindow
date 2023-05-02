@@ -95,6 +95,7 @@ bool TestWindow()
 	cfg.iPxHeight = 4 * 2;
 	cfg.iWidth  = 256 / 2;
 	cfg.iHeight = 240 / 2;
+	cfg.eState = WindowState::Maximized;
 
 	SetProcessDPIAware();
 

@@ -44,11 +44,18 @@ namespace rlPixelWindow
 
 		static constexpr PixelSize MaxPixelSize = std::numeric_limits<PixelSize>::max();
 
-		enum class WinResizeMode
+		enum class ResizeMode
 		{
 			None,   // No resizing.
 			Canvas, // The canvas is resized.
 			Pixels  // The pixels are resized. The canvas size is never changed.
+		};
+
+		enum class State
+		{
+			Normal,    // Restored.
+			Maximized, // Maximized.
+			Fullscreen // Fullscreen.
 		};
 
 		struct Config
@@ -71,9 +78,11 @@ namespace rlPixelWindow
 
 			// The resize mode.
 			// The meaning of minimum and maximum values depend on this value.
-			WinResizeMode eWinResizeMode = WinResizeMode::Canvas;
+			ResizeMode eWinResizeMode = ResizeMode::Canvas;
 			bool bMaximizable = true;
 			bool bMinimizable = true;
+
+			State eState = State::Normal;
 
 			// Resize constraints.
 			// A value of 0 indicates "no (custom) limit".
@@ -87,6 +96,8 @@ namespace rlPixelWindow
 			Size iMaxWidth  = 0;
 			Size iMaxHeight = 0;
 		};
+
+
 
 		class Layer final
 		{
@@ -128,8 +139,7 @@ namespace rlPixelWindow
 
 	protected: // static methods
 
-		static DWORD GetStyle(bool bResizable, bool bMaximizable,
-			bool bMinimizable = true, bool bMaximized = false);
+		static DWORD GetStyle(bool bResizable, bool bMaximizable, bool bMinimizable, State eState);
 		static SizeStruct MinSize(PixelSize iPixelWidth, PixelSize iPixelHeight, DWORD dwStyle);
 
 
@@ -247,6 +257,9 @@ namespace rlPixelWindow
 		Pixel m_pxClearColor = Color::Black;
 
 	};
+
+	using WindowResizeMode = Window::ResizeMode;
+	using WindowState = Window::State;
 
 }
 
