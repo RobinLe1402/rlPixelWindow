@@ -40,7 +40,7 @@ protected: // methods
 		if (oLayer.opacity() == 0.0f)
 			oLayer.setOpacity(1.0f);
 		else
-			oLayer.setOpacity(oLayer.opacity() - fOpacityPerSecond * dElapsedSeconds);
+			oLayer.setOpacity(float(oLayer.opacity() - fOpacityPerSecond * dElapsedSeconds));
 
 		return true;
 	}
