@@ -865,19 +865,15 @@ namespace rlPixelWindow
 		GLsizei iX, iY;
 		switch (m_eState)
 		{
-		case State::Normal: // size restrictions are applied live --> always exact width
-			iX = 0;
-			iY = 0;
-			break;
-
 		default:
+		case State::Normal:
 		case State::Maximized: // top left
 			iX = 0;
 			iY = iClientHeight - m_iHeight * m_iPixelHeight; // OpenGL Y is inverted
 			break;
 
 		case State::Fullscreen: // center
-			iX = (iClientWidth  - m_iWidth * m_iPixelWidth)   / 2;
+			iX = (iClientWidth  - m_iWidth  * m_iPixelWidth)   / 2;
 			iY = (iClientHeight - m_iHeight * m_iPixelHeight) / 2;
 			break;
 		}
