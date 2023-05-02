@@ -27,9 +27,20 @@ protected: // methods
 		if (iRuntimeSecs >= 5)
 			return false;*/
 
-		layer(0).bitmap().clear();
-		layer(0).bitmap().setPixel(width() - 1, height() - 1, Color::White);
-		layer(0).invalidate();
+		auto &oLayer = layer(0);
+
+		oLayer.bitmap().clear();
+		oLayer.bitmap().setPixel(width() - 1, height() - 1, Color::White);
+		oLayer.invalidate();
+
+
+		constexpr double dOpacityShiftDuration = 1;
+		constexpr float fOpacityPerSecond = 1.0 / dOpacityShiftDuration;
+
+		if (oLayer.opacity() == 0.0f)
+			oLayer.setOpacity(1.0f);
+		else
+			oLayer.setOpacity(oLayer.opacity() - fOpacityPerSecond * dElapsedSeconds);
 
 		return true;
 	}

@@ -116,7 +116,10 @@ namespace rlPixelWindow
 			const Bitmap &bitmap() const { return *m_upBitmap; }
 			Bitmap       &bitmap()       { return *m_upBitmap; }
 
-			auto textureID() const { return m_iTexID; }
+			auto textureID() const noexcept { return m_iTexID; }
+
+			auto opacity()   const noexcept { return m_fOpacity; }
+			void setOpacity(float fOpacity);
 
 
 		private: // methods
@@ -132,6 +135,8 @@ namespace rlPixelWindow
 			std::unique_ptr<Bitmap> m_upBitmap;
 			bool     m_bInvalid = true;
 			unsigned m_iTexID   = 0;
+
+			float    m_fOpacity = 1.0f;
 
 		};
 

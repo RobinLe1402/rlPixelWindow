@@ -20,6 +20,19 @@ namespace rlPixelWindow
 		glDeleteTextures(1, &i);
 	}
 
+	void Window::Layer::setOpacity(float fOpacity)
+	{
+		if (fOpacity > 1.0f)
+			fOpacity = 1.0f;
+		else if (fOpacity < 0.0f)
+			fOpacity = 0.0f;
+
+		m_fOpacity = fOpacity;
+
+		glBindTexture(GL_TEXTURE_2D, m_iTexID);
+		glColor4f(1.0f, 1.0f, 1.0f, m_fOpacity);
+	}
+
 	void Window::Layer::create(Size iWidth, Size iHeight, bool bKeepOldData)
 	{
 		if (m_iTexID == 0)
@@ -328,6 +341,8 @@ namespace rlPixelWindow
 				if (!m_bRunning)
 					goto lbClose;
 			}
+
+			doUpdate();
 		} while (m_bRunning);
 
 	lbClose:
@@ -422,8 +437,8 @@ namespace rlPixelWindow
 		if (m_tpPast == decltype(m_tpPast){})
 			m_tpPast = m_tpNow;
 
-		const double dMillisecondsPassed =
-			std::chrono::duration<double, std::milli>(m_tpNow - m_tpPast).count();
+		const double dSecondsPassed = std::chrono::duration<double>(m_tpNow - m_tpPast).count();
+		const double dMillisecondsPassed = dSecondsPassed / 1000;
 
 		m_tpPast = m_tpNow;
 
@@ -436,7 +451,7 @@ namespace rlPixelWindow
 			m_dRuntime_SubMilliseconds = std::modf(m_dRuntime_SubMilliseconds, &dDummy);
 		}
 
-		if (!onUpdate(dMillisecondsPassed * 1000.0))
+		if (!onUpdate(dSecondsPassed))
 		{
 			destroy();
 			return;
