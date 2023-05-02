@@ -192,6 +192,7 @@ namespace rlPixelWindow
 		virtual void onShutdown() {}
 
 		virtual bool tryResize(Size &iNewWidth, Size &iNewHeight) { return true; }
+		virtual void onResize(Size iNewWidth, Size iNewHeight) {}
 		virtual bool tryDropFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
 		{
 			return false;

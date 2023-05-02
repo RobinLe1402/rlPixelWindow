@@ -819,6 +819,8 @@ namespace rlPixelWindow
 		if (m_eState == State::Fullscreen)
 			--iClientWidth;
 
+		bool bResize = false;
+
 		switch (m_eResizeMode)
 		{
 		case ResizeMode::Canvas:
@@ -835,6 +837,9 @@ namespace rlPixelWindow
 			{
 				m_oLayers[i].create(iNewWidth, iNewHeight, true);
 			}
+
+			bResize = m_iWidth != iNewWidth || m_iHeight != iNewHeight;
+
 			m_iWidth  = iNewWidth;
 			m_iHeight = iNewHeight;
 
@@ -881,6 +886,8 @@ namespace rlPixelWindow
 		glViewport(iX, iY,
 			m_iWidth  * m_iPixelWidth,
 			m_iHeight * m_iPixelHeight);
+		if (bResize)
+			onResize(m_iWidth, m_iHeight);
 		doUpdate();
 	}
 
