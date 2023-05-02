@@ -198,6 +198,32 @@ namespace rlPixelWindow
 		return result;
 	}
 
+	Window::SizeStruct Window::MinPxSize(Size iWidth, Size iHeight, double dAspectRatio,
+		DWORD dwStyle)
+	{
+		RECT rect{};
+		AdjustWindowRect(&rect, dwStyle, FALSE);
+
+		const auto iFrameWidth  = rect.right - rect.left;
+		const auto iFrameHeight = rect.bottom - rect.top;
+
+		const auto iMinClientWidth  = s_iOSMinWinWidth - iFrameWidth;
+		const auto iMinClientHeight = s_iOSMinWinHeight - iFrameHeight;
+
+		SizeStruct result{};
+
+		result.iX = (Size)std::ceil((double)iMinClientWidth / iWidth);
+		result.iY = Size(result.iX / dAspectRatio);
+
+		if (result.iY * iHeight < iMinClientHeight)
+		{
+			result.iY = (Size)std::ceil((double)iMinClientHeight / iHeight);
+			result.iX = Size(result.iY * dAspectRatio);
+		}
+
+		return result;
+	}
+
 	LRESULT CALLBACK Window::GlobalWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		const auto it = s_oWindows.find(hWnd);
@@ -297,14 +323,34 @@ namespace rlPixelWindow
 		m_iPixelWidth  = cfg.iPxWidth;
 		m_iPixelHeight = cfg.iPxHeight;
 		m_dPixelAspectRatio = m_iPixelWidth / m_iPixelHeight;
-		m_iMinWidth    = cfg.iMinWidth;
-		m_iMinHeight   = cfg.iMinHeight;
-		m_iMaxWidth    = cfg.iMaxWidth;
-		m_iMaxHeight   = cfg.iMaxHeight;
 		m_oLayers.resize(cfg.iExtraLayers + 1); // initialized in WM_CREATE
 		m_pxClearColor = cfg.pxClearColor;
 		m_eResizeMode  = cfg.eResizeMode;
 		m_eState       = cfg.eState;
+
+		switch (m_eResizeMode)
+		{
+		case ResizeMode::Canvas:
+			m_iMinWidth  = cfg.iMinWidth;
+			m_iMinHeight = cfg.iMinHeight;
+			m_iMaxWidth  = cfg.iMaxWidth;
+			m_iMaxHeight = cfg.iMaxHeight;
+			break;
+
+		case ResizeMode::None:
+			m_iMinWidth  = cfg.iWidth;
+			m_iMinHeight = cfg.iHeight;
+			m_iMaxWidth  = cfg.iWidth;
+			m_iMaxHeight = cfg.iHeight;
+			break;
+
+		case ResizeMode::Pixels:
+			m_iMinWidth  = cfg.iWidth;
+			m_iMinHeight = cfg.iHeight;
+			m_iMaxWidth  = 0;
+			m_iMaxHeight = 0;
+			break;
+		}
 
 
 		this->RegisterWndClass();
@@ -606,8 +652,38 @@ namespace rlPixelWindow
 			const bool bBottom =
 				wParam == WMSZ_BOTTOM || wParam == WMSZ_BOTTOMLEFT || wParam == WMSZ_BOTTOMRIGHT;
 
-			const int iDiffX = iClientWidth % m_iPixelWidth;
-			const int iDiffY = iClientHeight % m_iPixelHeight;
+			int iDiffX = iClientWidth % m_iPixelWidth;
+			int iDiffY = iClientHeight % m_iPixelHeight;
+
+			switch (m_eResizeMode)
+			{
+			case ResizeMode::Canvas:
+				iDiffX = iClientWidth  % m_iPixelWidth;
+				iDiffY = iClientHeight % m_iPixelHeight;
+				break;
+
+			case ResizeMode::Pixels:
+			{
+				iDiffX = iClientWidth  % m_iPixelWidth;
+				iDiffY = iClientHeight % m_iPixelHeight;
+
+				PixelSize iPixelWidth  = iClientWidth / m_iWidth;
+				PixelSize iPixelHeight = iPixelWidth  / m_dPixelAspectRatio;
+				if (iClientHeight < iPixelHeight * m_iHeight)
+				{
+					iPixelHeight = iClientHeight / m_iHeight;
+					iPixelWidth  = iPixelHeight * m_dPixelAspectRatio;
+				}
+
+				iDiffX = iClientWidth  - (iPixelWidth  * m_iWidth);
+				iDiffY = iClientHeight - (iPixelHeight * m_iHeight);
+
+				break;
+			}
+
+			default:
+				throw std::exception("rlPixelWindow: WM_SIZING with invalid resize mode");
+			}
 
 
 			// todo: ask user for permission to resize
@@ -670,15 +746,41 @@ namespace rlPixelWindow
 
 			auto &mmi = *reinterpret_cast<LPMINMAXINFO>(lParam);
 
-			SizeStruct oEnforcedMin = MinSize(m_iPixelWidth, m_iPixelHeight, dwStyle);
-			oEnforcedMin.iX = std::max(oEnforcedMin.iX, m_iMinWidth);
-			oEnforcedMin.iY = std::max(oEnforcedMin.iY, m_iMinHeight);
+			LONG iMinClientWidth;
+			LONG iMinClientHeight;
+			switch (m_eResizeMode)
+			{
+			case ResizeMode::Canvas:
+			{
+				SizeStruct oEnforcedMin;
+				oEnforcedMin = MinSize(m_iPixelWidth, m_iPixelHeight, dwStyle);
+				oEnforcedMin.iX = std::max(oEnforcedMin.iX, m_iMinWidth);
+				oEnforcedMin.iY = std::max(oEnforcedMin.iY, m_iMinHeight);
+
+				iMinClientWidth  = oEnforcedMin.iX * m_iPixelWidth;
+				iMinClientHeight = oEnforcedMin.iY * m_iPixelHeight;
+				break;
+			}
+
+			case ResizeMode::Pixels:
+			{
+				const auto oAbsMin = MinPxSize(m_iWidth, m_iHeight, m_dPixelAspectRatio, dwStyle);
+
+				iMinClientWidth  = m_iWidth  * oAbsMin.iX;
+				iMinClientHeight = m_iHeight * oAbsMin.iY;
+
+				break;
+			}
+
+			default:
+				throw std::exception("rlPixelWindow: Invalid resize mode on WM_SIZING");
+			}
 
 			// minimum
 			mmi.ptMinTrackSize =
 			{
-				.x = oEnforcedMin.iX * m_iPixelWidth  + iFrameWidth,
-				.y = oEnforcedMin.iY * m_iPixelHeight + iFrameHeight
+				.x = iMinClientWidth  + iFrameWidth,
+				.y = iMinClientHeight + iFrameHeight
 			};
 
 			// maximum

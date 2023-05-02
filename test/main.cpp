@@ -21,7 +21,7 @@ protected: // methods
 			for (size_t iX = 0; iX < width(); ++iX)
 			{
 				if (bOpaque)
-					oLayer.bitmap().setPixel(iX, iY, Pixel::ByRGB(0xFF00FF));
+					oLayer.bitmap().setPixel((Pos)iX, (Pos)iY, Pixel::ByRGB(0xFF00FF));
 				bOpaque = !bOpaque;
 			}
 		}
@@ -127,7 +127,7 @@ bool TestWindow()
 	cfg.iWidth  = 256;
 	cfg.iHeight = 240;
 	cfg.eResizeMode = WindowResizeMode::Pixels;
-	cfg.eState = WindowState::Fullscreen;
+	//cfg.eState = WindowState::Fullscreen;
 	cfg.iExtraLayers = 1;
 
 	//cfg.iMaxWidth = 130;
