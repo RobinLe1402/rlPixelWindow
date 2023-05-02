@@ -28,9 +28,6 @@ namespace rlPixelWindow
 			fOpacity = 0.0f;
 
 		m_fOpacity = fOpacity;
-
-		glBindTexture(GL_TEXTURE_2D, m_iTexID);
-		glColor4f(1.0f, 1.0f, 1.0f, m_fOpacity);
 	}
 
 	void Window::Layer::create(Size iWidth, Size iHeight, bool bKeepOldData)
@@ -98,6 +95,24 @@ namespace rlPixelWindow
 
 		m_upBitmap = nullptr;
 		m_bInvalid = true;
+	}
+
+	void Window::Layer::draw()
+	{
+		validate();
+
+		glBindTexture(GL_TEXTURE_2D, m_iTexID);
+		glColor4f(1.0f, 1.0f, 1.0f, m_fOpacity);
+
+		// draw texture (full width and height, but upside down)
+		glBegin(GL_QUADS);
+		{
+			glTexCoord2f(0.0, 1.0);	glVertex3f(-1.0f, -1.0f, 0.0f);
+			glTexCoord2f(0.0, 0.0);	glVertex3f(-1.0f, 1.0f, 0.0f);
+			glTexCoord2f(1.0, 0.0);	glVertex3f(1.0f, 1.0f, 0.0f);
+			glTexCoord2f(1.0, 1.0);	glVertex3f(1.0f, -1.0f, 0.0f);
+		}
+		glEnd();
 	}
 
 	void Window::Layer::validate()
@@ -267,7 +282,7 @@ namespace rlPixelWindow
 
 		// check absolute minimum size
 		const auto oMinSize = MinSize(cfg.iPxWidth, cfg.iPxHeight,
-			GetStyle(cfg.eWinResizeMode != ResizeMode::None, cfg.bMaximizable, cfg.bMinimizable,
+			GetStyle(cfg.eResizeMode != ResizeMode::None, cfg.bMaximizable, cfg.bMinimizable,
 				cfg.eState)
 		);
 		if (cfg.iWidth < oMinSize.iX || cfg.iHeight < oMinSize.iY ||
@@ -281,18 +296,20 @@ namespace rlPixelWindow
 		m_iHeight      = cfg.iHeight;
 		m_iPixelWidth  = cfg.iPxWidth;
 		m_iPixelHeight = cfg.iPxHeight;
+		m_dPixelAspectRatio = m_iPixelWidth / m_iPixelHeight;
 		m_iMinWidth    = cfg.iMinWidth;
 		m_iMinHeight   = cfg.iMinHeight;
 		m_iMaxWidth    = cfg.iMaxWidth;
 		m_iMaxHeight   = cfg.iMaxHeight;
 		m_oLayers.resize(cfg.iExtraLayers + 1); // initialized in WM_CREATE
 		m_pxClearColor = cfg.pxClearColor;
+		m_eResizeMode  = cfg.eResizeMode;
 		m_eState       = cfg.eState;
 
 
 		this->RegisterWndClass();
 
-		DWORD dwStyle = GetStyle(cfg.eWinResizeMode != ResizeMode::None,
+		DWORD dwStyle = GetStyle(cfg.eResizeMode != ResizeMode::None,
 			cfg.bMaximizable, cfg.bMinimizable, cfg.eState);
 
 		int iX = CW_USEDEFAULT, iY = CW_USEDEFAULT;
@@ -307,7 +324,7 @@ namespace rlPixelWindow
 			{
 				.left   = 0,
 				.top    = 0,
-				.right  = m_iWidth * m_iPixelWidth,
+				.right  = m_iWidth  * m_iPixelWidth,
 				.bottom = m_iHeight * m_iPixelHeight
 			};
 			if (!AdjustWindowRect(&rc, dwStyle, FALSE))
@@ -500,19 +517,7 @@ namespace rlPixelWindow
 		glClear(GL_COLOR_BUFFER_BIT);
 		for (auto &oLayer : m_oLayers)
 		{
-			oLayer.validate();
-
-			glBindTexture(GL_TEXTURE_2D, oLayer.textureID());
-
-			// draw texture (full width and height, but upside down)
-			glBegin(GL_QUADS);
-			{
-				glTexCoord2f(0.0, 1.0);	glVertex3f(-1.0f, -1.0f, 0.0f);
-				glTexCoord2f(0.0, 0.0);	glVertex3f(-1.0f, 1.0f, 0.0f);
-				glTexCoord2f(1.0, 0.0);	glVertex3f(1.0f, 1.0f, 0.0f);
-				glTexCoord2f(1.0, 1.0);	glVertex3f(1.0f, -1.0f, 0.0f);
-			}
-			glEnd();
+			oLayer.draw();
 		}
 		SwapBuffers(GetDC(m_hWnd));
 	}
@@ -712,26 +717,70 @@ namespace rlPixelWindow
 		if (m_eState == State::Fullscreen)
 			--iClientWidth;
 
-		Size iWidth  = iClientWidth  / m_iPixelWidth;
-		Size iHeight = iClientHeight / m_iPixelHeight;
-
-
-		if (iWidth == m_iWidth && iHeight == m_iHeight)
-			return; // do nothing
-
-		if (m_iMaxWidth  > 0 && iWidth  > m_iMaxWidth)
-			iWidth  = m_iMaxWidth;
-		if (m_iMaxHeight > 0 && iHeight > m_iMaxHeight)
-			iHeight = m_iMaxHeight;
-
-		for (size_t i = 0; i < m_oLayers.size(); ++i)
+		switch (m_eResizeMode)
 		{
-			m_oLayers[i].create(iWidth, iHeight, true);
-		}
-		m_iWidth  = iWidth;
-		m_iHeight = iHeight;
+		case ResizeMode::Canvas:
+		{
+			Size iNewWidth  = iClientWidth  / m_iPixelWidth;
+			Size iNewHeight = iClientHeight / m_iPixelHeight;
 
-		glViewport(0, iClientHeight - m_iHeight * m_iPixelHeight,
+			if (m_iMaxWidth > 0 && iNewWidth > m_iMaxWidth)
+				iNewWidth  = m_iMaxWidth;
+			if (m_iMaxHeight > 0 && iNewHeight > m_iMaxHeight)
+				iNewHeight = m_iMaxHeight;
+
+			for (size_t i = 0; i < m_oLayers.size(); ++i)
+			{
+				m_oLayers[i].create(iNewWidth, iNewHeight, true);
+			}
+			m_iWidth  = iNewWidth;
+			m_iHeight = iNewHeight;
+
+			break;
+		}
+
+		case ResizeMode::Pixels:
+		{
+			PixelSize iPixelHeight = iClientHeight / m_iHeight;
+			PixelSize iPixelWidth  = PixelSize(iPixelHeight * m_dPixelAspectRatio);
+			if (iPixelWidth * m_iWidth > iClientWidth)
+			{
+				iPixelWidth  = iClientWidth / m_iWidth;
+				iPixelHeight = PixelSize(iPixelWidth / m_dPixelAspectRatio);
+			}
+
+			m_iPixelWidth  = iPixelWidth;
+			m_iPixelHeight = iPixelHeight;
+			break;
+		}
+
+		default:
+		case ResizeMode::None:
+			// change nothing
+			break;
+		}
+
+		GLsizei iX, iY;
+		switch (m_eState)
+		{
+		case State::Normal: // size restrictions are applied live --> always exact width
+			iX = 0;
+			iY = 0;
+			break;
+
+		default:
+		case State::Maximized: // top left
+			iX = 0;
+			iY = iClientHeight - m_iHeight * m_iPixelHeight; // OpenGL Y is inverted
+			break;
+
+		case State::Fullscreen: // center
+			iX = (iClientWidth  - m_iWidth * m_iPixelWidth)   / 2;
+			iY = (iClientHeight - m_iHeight * m_iPixelHeight) / 2;
+			break;
+		}
+
+		glViewport(iX, iY,
 			m_iWidth  * m_iPixelWidth,
 			m_iHeight * m_iPixelHeight);
 		doUpdate();

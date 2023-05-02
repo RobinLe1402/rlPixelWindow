@@ -10,6 +10,26 @@ class WindowImpl : public Window
 {
 protected: // methods
 
+	bool onStartup() override
+	{
+		auto &oLayer = layer(0);
+
+		bool bOpaque;
+		for (size_t iY = 0; iY < height(); ++iY)
+		{
+			bOpaque = iY % 2;
+			for (size_t iX = 0; iX < width(); ++iX)
+			{
+				if (bOpaque)
+					oLayer.bitmap().setPixel(iX, iY, Pixel::ByRGB(0xFF00FF));
+				bOpaque = !bOpaque;
+			}
+		}
+		oLayer.setOpacity(0.5);
+		oLayer.invalidate();
+		return true;
+	}
+
 	bool onUpdate(double dElapsedSeconds) override
 	{
 		/*static auto iLastRuntimeSecs = runtimeMilliseconds() / 1000;
@@ -27,7 +47,7 @@ protected: // methods
 		if (iRuntimeSecs >= 5)
 			return false;*/
 
-		auto &oLayer = layer(0);
+		auto &oLayer = layer(1);
 
 		oLayer.bitmap().clear();
 		oLayer.bitmap().setPixel(width() - 1, height() - 1, Color::White);
@@ -102,13 +122,15 @@ bool TestWindow()
 	Window::Config cfg;
 	//cfg.eWinResizeMode = Window::WinResizeMode::None;
 	cfg.pxClearColor = Pixel::ByRGB(0x101010);
-	cfg.iPxWidth  = 5 * 2;
-	cfg.iPxHeight = 4 * 2;
-	cfg.iWidth  = 256 / 2;
-	cfg.iHeight = 240 / 2;
+	cfg.iPxWidth  = 1;
+	cfg.iPxHeight = 1;
+	cfg.iWidth  = 256;
+	cfg.iHeight = 240;
+	cfg.eResizeMode = WindowResizeMode::Pixels;
 	cfg.eState = WindowState::Fullscreen;
+	cfg.iExtraLayers = 1;
 
-	cfg.iMaxWidth = 130;
+	//cfg.iMaxWidth = 130;
 
 	SetProcessDPIAware();
 

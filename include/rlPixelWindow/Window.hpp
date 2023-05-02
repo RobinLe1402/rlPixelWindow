@@ -78,7 +78,7 @@ namespace rlPixelWindow
 
 			// The resize mode.
 			// The meaning of minimum and maximum values depend on this value.
-			ResizeMode eWinResizeMode = ResizeMode::Canvas;
+			ResizeMode eResizeMode = ResizeMode::Canvas;
 			bool bMaximizable = true;
 			bool bMinimizable = true;
 
@@ -86,7 +86,7 @@ namespace rlPixelWindow
 
 			// Resize constraints.
 			// A value of 0 indicates "no (custom) limit".
-			// The meaning of the values depend on the value of eWinResizeMode:
+			// The meaning of the values depend on the value of eResizeMode:
 			// * WinResizeMode::Canvas: The constraints are for the canvas size.
 			// * WinResizeMode::Pixels: The constraints are for the pixel size. (< MaxPixelSize)
 
@@ -116,8 +116,6 @@ namespace rlPixelWindow
 			const Bitmap &bitmap() const { return *m_upBitmap; }
 			Bitmap       &bitmap()       { return *m_upBitmap; }
 
-			auto textureID() const noexcept { return m_iTexID; }
-
 			auto opacity()   const noexcept { return m_fOpacity; }
 			void setOpacity(float fOpacity);
 
@@ -126,6 +124,8 @@ namespace rlPixelWindow
 
 			void create(Size iWidth, Size iHeight, bool bKeepOldData = false);
 			void destroy();
+
+			void draw();
 
 			void validate();
 
@@ -251,6 +251,7 @@ namespace rlPixelWindow
 		Size m_iHeight = 0;
 		PixelSize m_iPixelWidth  = 0;
 		PixelSize m_iPixelHeight = 0;
+		double m_dPixelAspectRatio = 0.0f;
 
 		Size m_iMinWidth  = 0;
 		Size m_iMinHeight = 0;
@@ -261,6 +262,7 @@ namespace rlPixelWindow
 
 		Pixel m_pxClearColor = Color::Black;
 
+		ResizeMode m_eResizeMode = ResizeMode::Canvas;
 		State m_eState = State::Normal;
 
 	};
