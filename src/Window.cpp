@@ -287,29 +287,69 @@ namespace rlPixelWindow
 		m_iMaxHeight   = cfg.iMaxHeight;
 		m_oLayers.resize(cfg.iExtraLayers + 1); // initialized in WM_CREATE
 		m_pxClearColor = cfg.pxClearColor;
+		m_eState       = cfg.eState;
 
 
 		this->RegisterWndClass();
 
 		DWORD dwStyle = GetStyle(cfg.eWinResizeMode != ResizeMode::None,
 			cfg.bMaximizable, cfg.bMinimizable, cfg.eState);
-		RECT rc =
+
+		int iX = CW_USEDEFAULT, iY = CW_USEDEFAULT;
+		int iWinWidth, iWinHeight;
+
+		switch (cfg.eState)
 		{
-			.left   = 0,
-			.top    = 0,
-			.right  = m_iWidth  * m_iPixelWidth,
-			.bottom = m_iHeight * m_iPixelHeight
-		};
-		if (!AdjustWindowRect(&rc, dwStyle, FALSE))
+		case State::Maximized:
+		case State::Normal:
 		{
-			this->UnregisterWndClass();
-			clear();
-			return false;
+			RECT rc =
+			{
+				.left   = 0,
+				.top    = 0,
+				.right  = m_iWidth * m_iPixelWidth,
+				.bottom = m_iHeight * m_iPixelHeight
+			};
+			if (!AdjustWindowRect(&rc, dwStyle, FALSE))
+			{
+				this->UnregisterWndClass();
+				clear();
+				return false;
+			}
+			iX = CW_USEDEFAULT;
+			iY = CW_USEDEFAULT;
+			iWinWidth  = rc.right  - rc.left;
+			iWinHeight = rc.bottom - rc.top;
+		}
+			break;
+
+		case State::Fullscreen:
+		{
+			HMONITOR hMon = MonitorFromPoint(POINT(0, 0), MONITOR_DEFAULTTOPRIMARY);
+			MONITORINFO mi{ sizeof(mi) };
+			if (hMon == NULL || !GetMonitorInfo(hMon, &mi))
+			{
+				this->UnregisterWndClass();
+				clear();
+				return false;
+			}
+			
+			iX = mi.rcMonitor.left;
+			iY = mi.rcMonitor.top;
+			iWinWidth  = mi.rcMonitor.right  - mi.rcMonitor.left + 1; // dummy pixel for fullscreen
+			iWinHeight = mi.rcMonitor.bottom - mi.rcMonitor.top;
+		}
+		break;
+
+
+		default:
+			iWinWidth  = 0;
+			iWinHeight = 0;
+			break;
 		}
 
-		if (!CreateWindowW(szWNDCLASSNAME, cfg.sTitle.c_str(), dwStyle,
-			CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, NULL, NULL,
-			GetModuleHandle(NULL), this))
+		if (!CreateWindowW(szWNDCLASSNAME, cfg.sTitle.c_str(), dwStyle, iX, iY,
+			iWinWidth, iWinHeight, NULL, NULL, GetModuleHandle(NULL), this))
 		{
 			clear();
 			return false;
@@ -597,11 +637,13 @@ namespace rlPixelWindow
 
 			case SIZE_MAXIMIZED:
 				handleResize(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				m_eState = State::Maximized;
 				// todo: On Maximize
 				break;
 
 			case SIZE_RESTORED:
 				handleResize(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				m_eState = State::Normal;
 				// todo: On Restored
 				break;
 			}
@@ -667,6 +709,9 @@ namespace rlPixelWindow
 
 	void Window::handleResize(Size iClientWidth, Size iClientHeight)
 	{
+		if (m_eState == State::Fullscreen)
+			--iClientWidth;
+
 		Size iWidth  = iClientWidth  / m_iPixelWidth;
 		Size iHeight = iClientHeight / m_iPixelHeight;
 

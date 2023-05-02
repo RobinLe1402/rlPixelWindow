@@ -261,6 +261,8 @@ namespace rlPixelWindow
 
 		Pixel m_pxClearColor = Color::Black;
 
+		State m_eState = State::Normal;
+
 	};
 
 	using WindowResizeMode = Window::ResizeMode;

@@ -101,12 +101,14 @@ bool TestWindow()
 {
 	Window::Config cfg;
 	//cfg.eWinResizeMode = Window::WinResizeMode::None;
-	cfg.pxClearColor = Pixel::ByRGB(0xFF00FF);
+	cfg.pxClearColor = Pixel::ByRGB(0x101010);
 	cfg.iPxWidth  = 5 * 2;
 	cfg.iPxHeight = 4 * 2;
 	cfg.iWidth  = 256 / 2;
 	cfg.iHeight = 240 / 2;
-	cfg.eState = WindowState::Maximized;
+	cfg.eState = WindowState::Fullscreen;
+
+	cfg.iMaxWidth = 130;
 
 	SetProcessDPIAware();
 
