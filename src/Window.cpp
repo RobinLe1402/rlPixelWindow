@@ -667,12 +667,12 @@ namespace rlPixelWindow
 				iDiffX = iClientWidth  % m_iPixelWidth;
 				iDiffY = iClientHeight % m_iPixelHeight;
 
-				PixelSize iPixelWidth  = iClientWidth / m_iWidth;
-				PixelSize iPixelHeight = iPixelWidth  / m_dPixelAspectRatio;
+				PixelSize iPixelWidth  = PixelSize(iClientWidth / m_iWidth);
+				PixelSize iPixelHeight = PixelSize(iPixelWidth  / m_dPixelAspectRatio);
 				if (iClientHeight < iPixelHeight * m_iHeight)
 				{
-					iPixelHeight = iClientHeight / m_iHeight;
-					iPixelWidth  = iPixelHeight * m_dPixelAspectRatio;
+					iPixelHeight = PixelSize(iClientHeight / m_iHeight);
+					iPixelWidth  = PixelSize(iPixelHeight * m_dPixelAspectRatio);
 				}
 
 				iDiffX = iClientWidth  - (iPixelWidth  * m_iWidth);
