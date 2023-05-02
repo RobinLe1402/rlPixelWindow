@@ -641,14 +641,14 @@ namespace rlPixelWindow
 				break;
 
 			case SIZE_MAXIMIZED:
-				handleResize(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				m_eState = State::Maximized;
+				handleResize(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				// todo: On Maximize
 				break;
 
 			case SIZE_RESTORED:
-				handleResize(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				m_eState = State::Normal;
+				handleResize(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 				// todo: On Restored
 				break;
 			}
