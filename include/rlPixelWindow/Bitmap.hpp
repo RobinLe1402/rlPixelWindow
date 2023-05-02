@@ -49,10 +49,15 @@ namespace rlPixelWindow
 		void setPixel(Pos iX, Pos iY, const Pixel &pxVal) noexcept(false);
 		Pixel getPixel(Pos iX, Pos iY) const noexcept(false);
 
+		void clear(const Pixel &pxClearColor = Color::Blank);
+
 		void drawSubImage(const Bitmap &oImage, Pos iStartX, Pos iStartY,
 			PixelOverlayMode eMode = PixelOverlayMode::Alpha) noexcept;
 
 		void drawPixel(Pos iX, Pos iY, const Pixel &pxVal) noexcept(false);
+
+		Pixel *data()             noexcept { return m_upPixels.get(); }
+		const Pixel *data() const noexcept { return m_upPixels.get(); }
 
 		Pixel *scanline(Pos iY) noexcept
 		{
@@ -66,8 +71,8 @@ namespace rlPixelWindow
 
 	private: // variables
 
-		size_t m_iWidth  = 0;
-		size_t m_iHeight = 0;
+		Size m_iWidth  = 0;
+		Size m_iHeight = 0;
 
 		std::unique_ptr<Pixel[]> m_upPixels;
 

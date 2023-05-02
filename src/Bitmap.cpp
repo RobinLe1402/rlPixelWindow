@@ -21,7 +21,7 @@ namespace rlPixelWindow
 		m_iWidth(other.m_iWidth), m_iHeight(other.m_iHeight),
 		m_upPixels(std::make_unique<Pixel[]>(other.m_iWidth * other.m_iHeight))
 	{
-		const size_t iDataSize = m_iWidth * m_iHeight * sizeof(Pixel);
+		const size_t iDataSize = (size_t)m_iWidth * m_iHeight * sizeof(Pixel);
 		memcpy_s(m_upPixels.get(), iDataSize, other.m_upPixels.get(), iDataSize);
 	}
 
@@ -41,7 +41,7 @@ namespace rlPixelWindow
 		if (iX < 0 || iX >= m_iWidth || iY < 0 || iY >= m_iHeight)
 			throw std::exception("Bitmap::setPixel called with invalid position");
 
-		m_upPixels[iY * m_iWidth + iX] = pxVal;
+		m_upPixels[(size_t)iY * m_iWidth + iX] = pxVal;
 	}
 
 	Pixel Bitmap::getPixel(Pos iX, Pos iY) const noexcept(false)
@@ -49,7 +49,15 @@ namespace rlPixelWindow
 		if (iX < 0 || iX >= m_iWidth || iY < 0 || iY >= m_iHeight)
 			throw std::exception("Bitmap::getPixel called with invalid position");
 
-		return m_upPixels[iY * m_iWidth + iX];
+		return m_upPixels[(size_t)iY * m_iWidth + iX];
+	}
+
+	void Bitmap::clear(const Pixel &pxClearColor)
+	{
+		for (size_t i = 0; i < (size_t)m_iWidth * m_iHeight; ++i)
+		{
+			m_upPixels[i] = pxClearColor;
+		}
 	}
 
 	void Bitmap::drawSubImage(const Bitmap &oImage, Pos iStartX, Pos iStartY,
@@ -135,7 +143,7 @@ namespace rlPixelWindow
 		if (iX < 0 || iX >= m_iWidth || iY < 0 || iY >= m_iHeight)
 			throw std::exception("Bitmap::drawPixel called with invalid position");
 
-		auto &px = m_upPixels[iY * m_iWidth + iX];
+		auto &px = m_upPixels[(size_t)iY * m_iWidth + iX];
 		px = DrawPixelOnPixel(px, pxVal);
 	}
 
