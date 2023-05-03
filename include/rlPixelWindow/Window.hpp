@@ -190,18 +190,64 @@ namespace rlPixelWindow
 
 	protected: // methods
 
+		/// <summary>
+		/// Try to initialize the app.
+		/// </summary>
+		/// <returns>Can the app be run?</returns>
 		virtual bool onStartup() { return true; }
+
+		/// <summary>
+		/// Update the inner state and graphics.
+		/// </summary>
+		/// <param name="dElapsedSeconds">
+		/// The count of seconds elapsed since the last call to the function.<para />
+		/// On first call, this value is set to 0.0.
+		/// </param>
+		/// <returns>Should the app continue running?</returns>
 		virtual bool onUpdate(double dElapsedSeconds) { return false; }
+
+		/// <summary>
+		/// Can the app currently be closed?<para />
+		/// This function is called when the user attempts to close the window,
+		/// but not when <c>onUpdate</c> returned <c>FALSE</c>.
+		/// </summary>
 		virtual bool onTryClose() { return true; }
+
+		/// <summary>
+		/// The app is being closed, clean up.
+		/// </summary>
 		virtual void onShutdown() {}
 
+		/// <summary>
+		/// Handle an attempted canvas resize.<para />
+		/// Only called if the user manually resizes the window, but not on maximization.<para />
+		/// The parameter values can be changed by this function, however if the new values are
+		/// invalid, the resize is rejected.
+		/// </summary>
+		/// <returns>Should the resize be accepted?</returns>
 		virtual bool tryResize(Size &iNewWidth, Size &iNewHeight) { return true; }
+
+		/// <summary>
+		/// The canvas was resized.
+		/// </summary>
 		virtual void onResize(Size iNewWidth, Size iNewHeight) {}
+
+		/// <summary>
+		/// Can files be dropped at a certain position?
+		/// </summary>
 		virtual bool tryDropFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
 		{
 			return false;
 		}
 
+		/// <summary>
+		/// Files were dropped at a certain position.
+		/// </summary>
+		virtual void onDropFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY) {}
+
+		/// <summary>
+		/// The operating system (Windows) sent a message to the window.
+		/// </summary>
 		virtual void onOSMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {}
 
 
