@@ -61,7 +61,11 @@ namespace rlPixelWindow
 
 		Pixel *scanline(Pos iY) noexcept
 		{
-			return (iY < 0 || iY >= m_iHeight) ? nullptr : m_upPixels.get() + iY * m_iWidth;
+			return
+				(iY < 0 || iY >= m_iHeight) ?
+				nullptr
+				:
+				m_upPixels.get() + (uintptr_t)iY * m_iWidth;
 		}
 		const Pixel *scanline(Pos iY) const noexcept
 		{
