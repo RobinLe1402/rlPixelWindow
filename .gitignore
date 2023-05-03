@@ -1,4 +1,9 @@
+# Directories
 .vs/
 bin/
 lib/
 tmp/
+
+# Files
+*.aps
+*.user
