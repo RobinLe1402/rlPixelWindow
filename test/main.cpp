@@ -12,12 +12,17 @@ protected: // methods
 
 	bool tryResize(Size &iNewWidth, Size &iNewHeight) override
 	{
-		return false;
+		//return false;
+
+		iNewWidth = Size(iNewHeight / 3.0 * 4.0);
+
+		return true;
 	}
 
-	bool onStartup() override
+	void drawCheckerboard()
 	{
 		auto &oLayer = layer(0);
+		constexpr auto px = Pixel::ByRGB(0xAAAAAA);
 
 		bool bOpaque;
 		for (size_t iY = 0; iY < height(); ++iY)
@@ -26,13 +31,22 @@ protected: // methods
 			for (size_t iX = 0; iX < width(); ++iX)
 			{
 				if (bOpaque)
-					oLayer.bitmap().setPixel((Pos)iX, (Pos)iY, Pixel::ByRGB(0xFF00FF));
+					oLayer.bitmap().setPixel((Pos)iX, (Pos)iY, px);
 				bOpaque = !bOpaque;
 			}
 		}
-		oLayer.setOpacity(0.5);
 		oLayer.invalidate();
+	}
+
+	bool onStartup() override
+	{
+		drawCheckerboard();
 		return true;
+	}
+
+	void onResize(Size iNewWidth, Size iNewHeight) override
+	{
+		drawCheckerboard();
 	}
 
 	bool onUpdate(double dElapsedSeconds) override
@@ -129,8 +143,8 @@ bool TestWindow()
 	Window::Config cfg;
 	//cfg.eWinResizeMode = Window::WinResizeMode::None;
 	cfg.pxClearColor = Pixel::ByRGB(0x101010);
-	cfg.iPxWidth  = 1;
-	cfg.iPxHeight = 1;
+	cfg.iPxWidth  = 2;
+	cfg.iPxHeight = 2;
 	cfg.iWidth  = 256;
 	cfg.iHeight = 240;
 	//cfg.eResizeMode = WindowResizeMode::Pixels;
