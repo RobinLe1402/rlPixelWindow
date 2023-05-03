@@ -117,6 +117,8 @@ bool TestBitmap()
 	return true;
 }
 
+#include "resource.h"
+
 bool TestWindow()
 {
 	Window::Config cfg;
@@ -130,6 +132,11 @@ bool TestWindow()
 	//cfg.eState = WindowState::Fullscreen;
 	cfg.iExtraLayers = 1;
 
+	cfg.hIconBig = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ROBINLE), IMAGE_ICON,
+		16, 16, LR_COPYFROMRESOURCE);
+	cfg.hIconBig = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ROBINLE), IMAGE_ICON,
+		24, 24, LR_COPYFROMRESOURCE);
+
 	//cfg.iMaxWidth = 130;
 
 	SetProcessDPIAware();
@@ -139,6 +146,9 @@ bool TestWindow()
 	if (!oWin.create(cfg))
 	{
 		std::printf("Failed.\n");
+
+		DestroyIcon(cfg.hIconBig);
+		DestroyIcon(cfg.hIconSmall);
 		return false;
 	}
 	std::printf("Succeeded.\n\n");
@@ -147,9 +157,14 @@ bool TestWindow()
 	if (!oWin.run())
 	{
 		std::printf("Failed.\n");
+
+		DestroyIcon(cfg.hIconBig);
+		DestroyIcon(cfg.hIconSmall);
 		return false;
 	}
 	std::printf("Succeeded.\n");
 
+	DestroyIcon(cfg.hIconBig);
+	DestroyIcon(cfg.hIconSmall);
 	return true;
 }
