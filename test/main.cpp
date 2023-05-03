@@ -10,6 +10,11 @@ class WindowImpl : public Window
 {
 protected: // methods
 
+	bool tryResize(Size &iNewWidth, Size &iNewHeight) override
+	{
+		return false;
+	}
+
 	bool onStartup() override
 	{
 		auto &oLayer = layer(0);
@@ -128,7 +133,7 @@ bool TestWindow()
 	cfg.iPxHeight = 1;
 	cfg.iWidth  = 256;
 	cfg.iHeight = 240;
-	cfg.eResizeMode = WindowResizeMode::Pixels;
+	//cfg.eResizeMode = WindowResizeMode::Pixels;
 	//cfg.eState = WindowState::Fullscreen;
 	cfg.iExtraLayers = 1;
 

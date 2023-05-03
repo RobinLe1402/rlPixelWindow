@@ -665,9 +665,40 @@ namespace rlPixelWindow
 			switch (m_eResizeMode)
 			{
 			case ResizeMode::Canvas:
+			{
 				iDiffX = iClientWidth  % m_iPixelWidth;
 				iDiffY = iClientHeight % m_iPixelHeight;
+
+				const Size iNewWidth  = iClientWidth  / m_iPixelWidth;
+				const Size iNewHeight = iClientHeight / m_iPixelHeight;
+
+				Size iCustomWidth  = iNewWidth;
+				Size iCustomHeight = iNewHeight;
+
+				bool bDoResize = tryResize(iCustomWidth, iCustomHeight);
+				if (bDoResize)
+				{
+					const auto oMinSize = MinSize(m_iPixelWidth, m_iPixelHeight,
+						GetWindowLong(m_hWnd, GWL_STYLE));
+
+					if (iCustomWidth < oMinSize.iX || iCustomHeight < oMinSize.iY)
+						bDoResize = false;
+				}
+
+				if (!bDoResize)
+				{
+					iDiffX = iClientWidth  - ((int64_t)m_iWidth  * m_iPixelWidth);
+					iDiffY = iClientHeight - ((int64_t)m_iHeight * m_iPixelHeight);
+				}
+				else
+				{
+					// todo: iDiffX und iDiffY entsprechend anpassen
+				}
+
+
+
 				break;
+			}
 
 			case ResizeMode::Pixels:
 			{
