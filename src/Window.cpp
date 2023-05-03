@@ -9,6 +9,8 @@
 #include <gl/GL.h>
 #pragma comment(lib, "Opengl32.lib")
 
+// TODO: call tryDropFiles
+
 namespace rlPixelWindow
 {
 
@@ -418,6 +420,11 @@ namespace rlPixelWindow
 			return false;
 		}
 
+		if (cfg.hIconBig)
+			SendMessage(m_hWnd, WM_SETICON, ICON_BIG,   (LPARAM)cfg.hIconBig);
+		if (cfg.hIconSmall)
+			SendMessage(m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)cfg.hIconSmall);
+
 		return true;
 	}
 
@@ -686,7 +693,7 @@ namespace rlPixelWindow
 			}
 
 
-			// todo: ask user for permission to resize
+			// TODO: call tryResize
 
 
 			if (iDiffX)

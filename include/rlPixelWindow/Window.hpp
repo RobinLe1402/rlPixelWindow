@@ -63,6 +63,8 @@ namespace rlPixelWindow
 		struct Config
 		{
 			std::wstring sTitle = L"RobinLe Pixel Window";
+			HICON hIconBig   = NULL;
+			HICON hIconSmall = NULL;
 
 			// The count of extra layers in addition to the base layer.
 			size_t iExtraLayers = 0;
