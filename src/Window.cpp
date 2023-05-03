@@ -690,9 +690,10 @@ namespace rlPixelWindow
 					iDiffX = iClientWidth  - ((int64_t)m_iWidth  * m_iPixelWidth);
 					iDiffY = iClientHeight - ((int64_t)m_iHeight * m_iPixelHeight);
 				}
-				else
+				else if (iNewWidth != iCustomWidth || iNewHeight != iCustomHeight)
 				{
-					// todo: iDiffX und iDiffY entsprechend anpassen
+					iDiffX = iClientWidth  - ((int64_t)iCustomWidth  * m_iPixelWidth);
+					iDiffY = iClientHeight - ((int64_t)iCustomHeight * m_iPixelHeight);
 				}
 
 
@@ -722,9 +723,6 @@ namespace rlPixelWindow
 			default:
 				throw std::exception("rlPixelWindow: WM_SIZING with invalid resize mode");
 			}
-
-
-			// TODO: call tryResize
 
 
 			if (iDiffX)
