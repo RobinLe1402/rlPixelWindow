@@ -1,5 +1,6 @@
 # Directories
 .vs/
+enc_temp_folder/
 bin/
 lib/
 tmp/
