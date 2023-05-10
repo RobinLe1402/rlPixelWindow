@@ -8,8 +8,7 @@
 #include <windowsx.h>
 #include <gl/GL.h>
 #pragma comment(lib, "Opengl32.lib")
-
-// TODO: call tryDropFiles
+#include <ShlObj.h>
 
 namespace rlPixelWindow
 {
@@ -127,6 +126,160 @@ namespace rlPixelWindow
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
 			m_upBitmap->width(), m_upBitmap->height(), GL_RGBA, GL_UNSIGNED_BYTE,
 			m_upBitmap->data());
+	}
+
+
+
+	Window::DropTarget::DropTarget(Window &oWindow) : m_oWindow(oWindow)
+	{
+		if (FAILED(OleInitialize(NULL)))
+			throw std::exception("rlPixelWindow::DropTarget: Failed to initialize OLE");
+	}
+
+	Window::DropTarget::~DropTarget() { OleUninitialize(); }
+
+	void Window::DropTarget::initialize()
+	{
+		const HRESULT hr = RegisterDragDrop(m_oWindow.m_hWnd, this);
+		if (FAILED(hr))
+			throw std::exception("rlPixelWindow::DropTarget: Failed to register drop target");
+	}
+
+	STDMETHODIMP Window::DropTarget::QueryInterface(REFIID iid, void** ppv)
+	{
+		if (iid != IID_IUnknown && iid != IID_IDropTarget)
+		{
+			*ppv = NULL;
+			return ResultFromScode(E_NOINTERFACE);
+		}
+
+		*ppv = this;
+		AddRef();
+		return NOERROR;
+	}
+
+	STDMETHODIMP_(ULONG) Window::DropTarget::AddRef() { return ++m_iRefCount; }
+
+	STDMETHODIMP_(ULONG) Window::DropTarget::Release()
+	{
+		if (--m_iRefCount == 0)
+		{
+			delete this;
+			return 0;
+		}
+		return m_iRefCount;
+	}
+
+	STDMETHODIMP Window::DropTarget::DragEnter(IDataObject* pDataObj, DWORD grfKeyState,
+		POINTL pt, DWORD* pdwEffect)
+	{
+		FORMATETC fmtetc =
+		{
+			.cfFormat = CF_HDROP,
+			.ptd = NULL,
+			.dwAspect = DVASPECT_CONTENT,
+			.lindex = -1,
+			.tymed = TYMED_HGLOBAL
+		};
+
+		*pdwEffect = DROPEFFECT_NONE; // default: doesn't accept file
+
+		// check if dragged object provides CF_HDROP
+		if (pDataObj->QueryGetData(&fmtetc) != NOERROR)
+			return NOERROR; // not a file
+		else
+		{
+			// file
+
+			STGMEDIUM medium;
+			HRESULT hr = pDataObj->GetData(&fmtetc, &medium);
+
+			if (FAILED(hr))
+				return hr; // couldn't get data
+
+			auto& oDropFiles = *reinterpret_cast<DROPFILES*>(GlobalLock(medium.hGlobal));
+			if (oDropFiles.fNC)
+				return NOERROR; // the nonclient area doesn't ever accept files
+
+			const void* sz = reinterpret_cast<const uint8_t*>(&oDropFiles) + oDropFiles.pFiles;
+
+			// Unicode
+			if (oDropFiles.fWide)
+			{
+				auto szCurrent = reinterpret_cast<const wchar_t*>(sz);
+				do
+				{
+					const auto len = wcslen(szCurrent);
+
+					std::wstring s;
+					s.resize(len);
+					memcpy_s(&s[0], sizeof(wchar_t) * (s.length() + 1),
+						szCurrent, sizeof(wchar_t) * len);
+
+					m_oFilenames.push_back(std::move(s));
+
+					szCurrent += len + 1;
+				} while (szCurrent[0] != 0);
+			}
+
+			// Codepage
+			else
+			{
+				auto szCurrent = reinterpret_cast<const char*>(sz);
+				size_t len;
+
+				do
+				{
+					len = 0;
+					while (szCurrent[len] != '0') { ++len; }
+					const size_t lenWide = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
+						szCurrent, (int)len, NULL, NULL);
+
+					std::wstring s;
+					s.resize(lenWide - 1);
+					MultiByteToWideChar(CP_ACP, NULL, szCurrent, (int)len, &s[0], (int)lenWide);
+					m_oFilenames.push_back(std::move(s));
+
+					szCurrent += len + 1;
+				} while (szCurrent[0] != 0);
+			}
+
+
+			DWORD dwEffect = DROPEFFECT_NONE;
+			if (m_oWindow.handleFileDrag(m_oFilenames, pt.x, pt.y))
+				dwEffect = DROPEFFECT_COPY;
+			
+			*pdwEffect = dwEffect;
+		}
+
+		return S_OK;
+	}
+
+	STDMETHODIMP Window::DropTarget::DragOver(DWORD grfKeyState, POINTL pt, LPDWORD pdwEffect)
+	{
+		DWORD dwEffect = DROPEFFECT_NONE;
+		if (m_oWindow.handleFileDrag(m_oFilenames, pt.x, pt.y))
+			dwEffect = DROPEFFECT_COPY;
+
+		*pdwEffect = dwEffect;
+
+		return NOERROR;
+	}
+
+	STDMETHODIMP Window::DropTarget::Drop(LPDATAOBJECT pDataObj, DWORD grfKeyState, POINTL pt,
+		LPDWORD pdwEffect)
+	{
+		m_oWindow.handleFileDrop(m_oFilenames, pt.x, pt.y);
+		m_oFilenames.clear();
+
+		return NOERROR;
+	}
+
+	STDMETHODIMP Window::DropTarget::DragLeave()
+	{
+		m_oFilenames.clear();
+
+		return NOERROR;
 	}
 
 
@@ -254,14 +407,14 @@ namespace rlPixelWindow
 		// register class?
 		if (s_iWndClassRefCount == 1)
 		{
-			WNDCLASSW wc{};
+			WNDCLASSEXW wc{ sizeof(wc)};
 			wc.lpfnWndProc   = GlobalWndProc;
 			wc.lpszClassName = szWNDCLASSNAME;
 			wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
 			wc.hInstance     = GetModuleHandle(NULL);
 			wc.style         = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
 
-			if (!RegisterClassW(&wc))
+			if (!RegisterClassExW(&wc))
 				throw std::exception("rlPixelWindow window class couldn't be registered.");
 		}
 	}
@@ -413,12 +566,14 @@ namespace rlPixelWindow
 			break;
 		}
 
-		if (!CreateWindowW(szWNDCLASSNAME, cfg.sTitle.c_str(), dwStyle, iX, iY,
+		if (!CreateWindowExW(NULL, szWNDCLASSNAME, cfg.sTitle.c_str(), dwStyle, iX, iY,
 			iWinWidth, iWinHeight, NULL, NULL, GetModuleHandle(NULL), this))
 		{
 			clear();
 			return false;
 		}
+
+		m_oDropTarget.initialize();
 
 		if (cfg.hIconBig)
 			SendMessage(m_hWnd, WM_SETICON, ICON_BIG,   (LPARAM)cfg.hIconBig);
@@ -441,7 +596,9 @@ namespace rlPixelWindow
 		MSG msg{};
 		do
 		{
-			while (PeekMessageW(&msg, m_hWnd, 0, 0, PM_REMOVE))
+			// NOTE:
+			// hWnd must be NULL on PeekMessageW/GetMessageW in order to handle drag'n'drop properly
+			while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
 			{
 				doUpdate();
 
@@ -925,6 +1082,40 @@ namespace rlPixelWindow
 		if (bResize)
 			onResize(m_iWidth, m_iHeight);
 		doUpdate();
+	}
+
+	bool Window::handleFileDrag(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
+	{
+		RECT rcBorder{};
+		AdjustWindowRect(&rcBorder, GetWindowLong(m_hWnd, GWL_STYLE), FALSE);
+		
+		RECT rcWindow{};
+		GetWindowRect(m_hWnd, &rcWindow);
+
+		const RECT rcClient =
+		{
+			.left   = rcWindow.left   - rcBorder.left,
+			.top    = rcWindow.top    - rcBorder.top,
+			.right  = rcWindow.right  - rcBorder.right,
+			.bottom = rcWindow.bottom - rcBorder.bottom
+		};
+
+
+		if (iX < rcClient.left || iY < rcClient.top ||
+			iX > rcClient.right || iY > rcClient.bottom)
+			return false;
+
+		iX -= rcClient.left;
+		iY -= rcClient.top;
+
+		// todo: check if on canvas
+
+		return onDragFiles(oFiles, iX, iY);
+	}
+
+	void Window::handleFileDrop(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
+	{
+		// TODO
 	}
 
 }

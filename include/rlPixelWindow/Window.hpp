@@ -146,6 +146,51 @@ namespace rlPixelWindow
 
 
 
+	private: // types
+
+		class DropTarget : public IDropTarget
+		{
+		public: // methods
+
+			DropTarget(Window &oWindow);
+			~DropTarget();
+
+			void initialize();
+
+			auto &filenames() const noexcept { return m_oFilenames; }
+
+
+		protected: // IUnknown methods
+
+			STDMETHOD(QueryInterface)(REFIID riid, void** ppvObj);
+			STDMETHOD_(ULONG, AddRef)();
+			STDMETHOD_(ULONG, Release)();
+
+
+		protected: // IDropTarget methods
+
+			STDMETHOD(DragEnter)(IDataObject* pDataObj, DWORD grfKeyState, POINTL pt,
+				DWORD* pdwEffect);
+			STDMETHOD(DragOver)(DWORD grfKeyState, POINTL pt, LPDWORD pdwEffect);
+			STDMETHOD(Drop)(LPDATAOBJECT pDataObj, DWORD grfKeyState, POINTL pt,
+				LPDWORD pdwEffect);
+			STDMETHOD(DragLeave)();
+
+
+		private: // variables
+
+			Window &m_oWindow;
+			ULONG m_iRefCount = 0;
+			std::vector<std::wstring> m_oFilenames;
+
+			bool m_bInitialized = false;
+
+		};
+
+		friend class DropTarget;
+
+
+
 	protected: // static methods
 
 		static DWORD GetStyle(bool bResizable, bool bMaximizable, bool bMinimizable, State eState);
@@ -235,7 +280,7 @@ namespace rlPixelWindow
 		/// <summary>
 		/// Can files be dropped at a certain position?
 		/// </summary>
-		virtual bool tryDropFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
+		virtual bool onDragFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
 		{
 			return false;
 		}
@@ -285,11 +330,16 @@ namespace rlPixelWindow
 
 		void handleResize(Size iClientWidth, Size iClientHeight);
 
+		bool handleFileDrag(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY);
+		void handleFileDrop(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY);
+
 
 	private: // variables
 
 		HWND  m_hWnd  = NULL;
 		HGLRC m_hGLRC = NULL;
+
+		DropTarget m_oDropTarget = DropTarget(*this);
 
 		bool m_bRunning       = false;
 		bool m_bAppCloseQuery = false;
