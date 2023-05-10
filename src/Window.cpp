@@ -925,6 +925,30 @@ namespace rlPixelWindow
 
 
 
+		case WM_MOVE:
+		{
+			const auto iNewClientLeft = GET_X_LPARAM(lParam);
+			const auto iNewClientTop  = GET_Y_LPARAM(lParam);
+
+			const auto iMoveX = iNewClientLeft - m_rcClient.left;
+			const auto iMoveY = iNewClientTop  - m_rcClient.top;
+
+
+			m_rcClient.left   += iMoveX;
+			m_rcClient.top    += iMoveY;
+			m_rcClient.right  += iMoveX;
+			m_rcClient.bottom += iMoveY;
+
+			m_rcCanvas.left   += iMoveX;
+			m_rcCanvas.top    += iMoveY;
+			m_rcCanvas.right  += iMoveX;
+			m_rcCanvas.bottom += iMoveY;
+
+			return  0;
+		}
+
+
+
 		case WM_GETMINMAXINFO:
 		#pragma region
 		{
@@ -1012,6 +1036,19 @@ namespace rlPixelWindow
 		if (m_eState == State::Fullscreen)
 			--iClientWidth;
 
+		// get new client rect
+		GetWindowRect(m_hWnd, &m_rcClient);
+		RECT rcBorder{};
+		AdjustWindowRect(&rcBorder, GetWindowLong(m_hWnd, GWL_STYLE), FALSE);
+		m_rcClient.left   -= rcBorder.left;
+		m_rcClient.top    -= rcBorder.top;
+		m_rcClient.right  -= rcBorder.right;
+		m_rcClient.bottom -= rcBorder.bottom;
+
+		m_rcCanvas = m_rcClient;
+
+
+
 		bool bResize = false;
 
 		switch (m_eResizeMode)
@@ -1060,25 +1097,28 @@ namespace rlPixelWindow
 			break;
 		}
 
-		GLsizei iX, iY;
+		const Size iCanvasWidth  = m_iWidth  * m_iPixelWidth;
+		const Size iCanvasHeight = m_iHeight * m_iPixelHeight;
+
+		Pos iX = 0;
+		Pos iY = 0;
 		switch (m_eState)
 		{
 		default:
 		case State::Normal:
-		case State::Maximized: // top left
-			iX = 0;
-			iY = iClientHeight - m_iHeight * m_iPixelHeight; // OpenGL Y is inverted
-			break;
-
+		case State::Maximized:
 		case State::Fullscreen: // center
-			iX = (iClientWidth  - m_iWidth  * m_iPixelWidth)   / 2;
-			iY = (iClientHeight - m_iHeight * m_iPixelHeight) / 2;
+			iX = (iClientWidth  - iCanvasWidth)  / 2;
+			iY = (iClientHeight - iCanvasHeight) / 2;
 			break;
 		}
 
-		glViewport(iX, iY,
-			m_iWidth  * m_iPixelWidth,
-			m_iHeight * m_iPixelHeight);
+		m_rcCanvas.left   = m_rcClient.left + iX;
+		m_rcCanvas.top    = m_rcClient.top + iY;
+		m_rcCanvas.right  = m_rcCanvas.left + iCanvasWidth;
+		m_rcCanvas.bottom = m_rcCanvas.top  + iCanvasHeight;
+
+		glViewport(iX, iY, iCanvasWidth, iCanvasHeight);
 		if (bResize)
 			onResize(m_iWidth, m_iHeight);
 		doUpdate();
@@ -1086,36 +1126,24 @@ namespace rlPixelWindow
 
 	bool Window::handleFileDrag(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
 	{
-		RECT rcBorder{};
-		AdjustWindowRect(&rcBorder, GetWindowLong(m_hWnd, GWL_STYLE), FALSE);
-		
-		RECT rcWindow{};
-		GetWindowRect(m_hWnd, &rcWindow);
-
-		const RECT rcClient =
-		{
-			.left   = rcWindow.left   - rcBorder.left,
-			.top    = rcWindow.top    - rcBorder.top,
-			.right  = rcWindow.right  - rcBorder.right,
-			.bottom = rcWindow.bottom - rcBorder.bottom
-		};
-
-
-		if (iX < rcClient.left || iY < rcClient.top ||
-			iX > rcClient.right || iY > rcClient.bottom)
+		if (iX <  m_rcCanvas.left  || iY <  m_rcCanvas.top ||
+			iX >= m_rcCanvas.right || iY >= m_rcCanvas.bottom)
 			return false;
 
-		iX -= rcClient.left;
-		iY -= rcClient.top;
+		iX -= m_rcCanvas.left;
+		iY -= m_rcCanvas.top;
 
-		// todo: check if on canvas
-
-		return onDragFiles(oFiles, iX, iY);
+		bool bAccepted = false;
+		onDragFiles(oFiles, iX / m_iPixelWidth, iY / m_iPixelHeight, bAccepted);
+		return bAccepted;
 	}
 
 	void Window::handleFileDrop(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
 	{
-		// TODO
+		onDropFiles(oFiles,
+			(iX - m_rcCanvas.left) / m_iPixelWidth,
+			(iY - m_rcCanvas.top)  / m_iPixelHeight
+		);
 	}
 
 }

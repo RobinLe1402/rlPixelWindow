@@ -14,9 +14,30 @@ protected: // methods
 	{
 		//return false;
 
-		iNewWidth = Size(iNewHeight / 3.0 * 4.0);
+		//iNewWidth = Size(iNewHeight / 3.0 * 4.0);
 
 		return true;
+	}
+
+	void onDragFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY, bool &bAccept)
+		override
+	{
+		bAccept = true;
+	}
+
+	void onDropFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY) override
+	{
+		std::wstring sMsg = L"The following files were dropped at (";
+		sMsg += std::to_wstring(iX) + L",";
+		sMsg += std::to_wstring(iY) + L")\n\n";
+
+		for (const auto &s : oFiles)
+		{
+			sMsg += L"\"";
+			sMsg += s + L"\"\n";
+		}
+
+		MessageBoxW(NULL, sMsg.c_str(), L"Drag'n'Drop", MB_ICONINFORMATION | MB_APPLMODAL);
 	}
 
 	void drawCheckerboard()
@@ -156,7 +177,8 @@ bool TestWindow()
 	cfg.hIconBig = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ROBINLE), IMAGE_ICON,
 		24, 24, LR_COPYFROMRESOURCE);
 
-	//cfg.iMaxWidth = 130;
+	cfg.iMaxWidth  = 400;
+	cfg.iMaxHeight = 400;
 
 	SetProcessDPIAware();
 

@@ -278,16 +278,21 @@ namespace rlPixelWindow
 		virtual void onResize(Size iNewWidth, Size iNewHeight) {}
 
 		/// <summary>
-		/// Can files be dropped at a certain position?
+		/// Files are currently being dragged at a certain position.
 		/// </summary>
-		virtual bool onDragFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY)
-		{
-			return false;
-		}
+		/// <param name="oFiles">A list of filepaths. Might include directories.</param>
+		/// <param name="iX">The X-coordinate on the canvas the mouse is currently at.</param>
+		/// <param name="iY">The Y-coordinate on the canvas the mouse is currently at.</param>
+		/// <param name="bAccept">Would a drop be accepted?</param>
+		virtual void onDragFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY,
+			bool &bAccept) { }
 
 		/// <summary>
 		/// Files were dropped at a certain position.
 		/// </summary>
+		/// <param name="oFiles">A list of filepaths. Might include directories.</param>
+		/// <param name="iX">The X-coordinate on the canvas where the drop occured.</param>
+		/// <param name="iY">The Y-coordinate on the canvas where the drop occured.</param>
 		virtual void onDropFiles(const std::vector<std::wstring> &oFiles, Pos iX, Pos iY) {}
 
 		/// <summary>
@@ -338,6 +343,8 @@ namespace rlPixelWindow
 
 		HWND  m_hWnd  = NULL;
 		HGLRC m_hGLRC = NULL;
+		RECT m_rcClient{};
+		RECT m_rcCanvas{};
 
 		DropTarget m_oDropTarget = DropTarget(*this);
 
