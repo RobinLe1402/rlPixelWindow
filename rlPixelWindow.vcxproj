@@ -84,7 +84,9 @@
     <ClInclude Include="include\rlPixelWindow\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="include\rlPixelWindow\GDIPlusFont.hpp" />
     <ClCompile Include="src\Bitmap.cpp" />
+    <ClCompile Include="src\GDIPlusFont.cpp" />
     <ClCompile Include="src\Pixel.cpp" />
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>

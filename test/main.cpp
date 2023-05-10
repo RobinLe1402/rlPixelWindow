@@ -1,5 +1,6 @@
 // Lib
 #include <rlPixelWindow/Core.hpp>
+#include <rlPixelWindow/GDIPlusFont.hpp>
 using namespace rlPixelWindow;
 
 bool TestPixel();
@@ -56,12 +57,30 @@ protected: // methods
 				bOpaque = !bOpaque;
 			}
 		}
+		oLayer.setOpacity(0.5f);
 		oLayer.invalidate();
 	}
 
 	bool onStartup() override
 	{
 		drawCheckerboard();
+
+		Gdiplus::Font font(L"Courier New", 12, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+		auto brush = std::make_unique<Gdiplus::SolidBrush>(Gdiplus::Color::White);
+
+		try
+		{
+			auto bmp = rlPixelWindow::BitmapFromText(font, brush.get(),
+				L"Lorem Ipsum (Courier New)", false);
+			layer(2).bitmap().drawSubImage(bmp, 0, 0, rlPixelWindow::Bitmap::PixelOverlayMode::OpaqueOnly);
+			layer(2).invalidate();
+		}
+		catch (const std::exception &e)
+		{
+			std::printf("Exception: %s\n", e.what());
+		}
+
+
 		return true;
 	}
 
@@ -109,6 +128,10 @@ protected: // methods
 
 int main()
 {
+	ULONG_PTR gpToken;
+	Gdiplus::GdiplusStartupInput gpsi;
+	Gdiplus::GdiplusStartup(&gpToken, &gpsi, nullptr);
+
 	std::printf("===== PIXELS =====\n");
 	TestPixel();
 	std::printf("\n\n");
@@ -120,6 +143,8 @@ int main()
 	std::printf("===== WINDOW =====\n");
 	TestWindow();
 	std::printf("\n\n");
+
+	Gdiplus::GdiplusShutdown(gpToken);
 
 	return 0;
 }
@@ -170,7 +195,7 @@ bool TestWindow()
 	cfg.iHeight = 240;
 	//cfg.eResizeMode = WindowResizeMode::Pixels;
 	//cfg.eState = WindowState::Fullscreen;
-	cfg.iExtraLayers = 1;
+	cfg.iExtraLayers = 2;
 
 	cfg.hIconBig = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ROBINLE), IMAGE_ICON,
 		16, 16, LR_COPYFROMRESOURCE);
