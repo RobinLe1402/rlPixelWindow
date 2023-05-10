@@ -1,4 +1,4 @@
-#include <rlPixelWindow/GDIPlusFont.hpp>
+#include <rlPixelWindow/Font.Windows.hpp>
 
 // STL
 #include <cmath>
@@ -29,7 +29,7 @@ namespace rlPixelWindow
 			throw std::exception("rlPixelWindow::BitmapFromText: MeasureString failed");
 
 		if (boundingBox.Width == 0 || boundingBox.Height == 0)
-			throw std::exception("rlPixelWindow::BitmapFromText: Empty bitmap generated");
+			return Bitmap(1, 1); // return 1x1 empty bitmap
 
 		auto bmpText = std::make_unique<Gdiplus::Bitmap>(
 			(INT)std::ceil(boundingBox.Width), (INT)std::ceil(boundingBox.Height));
@@ -45,9 +45,9 @@ namespace rlPixelWindow
 		{
 			for (size_t iY = 0; iY < oResult.height(); ++iY)
 			{
-				bmpText->GetPixel(iX, iY, &color);
-				oResult.setPixel(iX, iY, Pixel(color.GetRed(), color.GetGreen(), color.GetBlue(),
-					color.GetAlpha()));
+				bmpText->GetPixel((INT)iX, (INT)iY, &color);
+				oResult.setPixel((Bitmap::Pos)iX, (Bitmap::Pos)iY,
+					Pixel(color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha()));
 			}
 		}
 

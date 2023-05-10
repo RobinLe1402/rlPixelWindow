@@ -27,6 +27,9 @@
     <ClInclude Include="include\rlPixelWindow\Window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\rlPixelWindow\Font.Windows.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Pixel.cpp">
@@ -38,10 +41,7 @@
     <ClCompile Include="src\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="include\rlPixelWindow\GDIPlusFont.hpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\GDIPlusFont.cpp">
+    <ClCompile Include="src\Font.Windows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

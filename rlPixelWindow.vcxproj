@@ -80,13 +80,13 @@
   <ItemGroup>
     <ClInclude Include="include\rlPixelWindow\Bitmap.hpp" />
     <ClInclude Include="include\rlPixelWindow\Core.hpp" />
+    <ClInclude Include="include\rlPixelWindow\Font.Windows.hpp" />
     <ClInclude Include="include\rlPixelWindow\Pixel.hpp" />
     <ClInclude Include="include\rlPixelWindow\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="include\rlPixelWindow\GDIPlusFont.hpp" />
     <ClCompile Include="src\Bitmap.cpp" />
-    <ClCompile Include="src\GDIPlusFont.cpp" />
+    <ClCompile Include="src\Font.Windows.cpp" />
     <ClCompile Include="src\Pixel.cpp" />
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>

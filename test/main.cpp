@@ -1,6 +1,6 @@
 // Lib
 #include <rlPixelWindow/Core.hpp>
-#include <rlPixelWindow/GDIPlusFont.hpp>
+#include <rlPixelWindow/Font.Windows.hpp>
 using namespace rlPixelWindow;
 
 bool TestPixel();
