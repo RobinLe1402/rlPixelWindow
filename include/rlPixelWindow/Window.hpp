@@ -1,6 +1,11 @@
 #pragma once
 #ifndef RLPIXELWINDOW_WINDOW
 #define RLPIXELWINDOW_WINDOW
+// TODO: method to set canvas + pixel size
+// TODO: source documentation
+// TODO: general code cleanup
+// TODO: multiple tests with differernt window behaviour (non-/pixel-/canvas-resizable, fullscreen)
+// TODO: set startup position of window to center of monitor with currently selected window
 
 
 
