@@ -990,7 +990,7 @@ namespace rlPixelWindow
 			}
 
 			default:
-				throw std::exception("rlPixelWindow: Invalid resize mode on WM_SIZING");
+				return 0;
 			}
 
 			// minimum
@@ -1017,6 +1017,7 @@ namespace rlPixelWindow
 			if (!m_bAppCloseQuery && !onTryClose())
 				return 0;
 
+			onShutdown();
 			DestroyWindow(m_hWnd);
 			break;
 
