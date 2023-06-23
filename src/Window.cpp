@@ -442,6 +442,7 @@ namespace rlPixelWindow
 	bool Window::create(const Config &cfg)
 	{
 		destroy();
+		SetProcessDPIAware();
 
 		// check for generally invalid values
 		if (cfg.iExtraLayers >= m_oLayers.max_size() - 1 ||
@@ -590,6 +591,7 @@ namespace rlPixelWindow
 
 		if (!onStartup())
 			return false;
+
 		ShowWindow(m_hWnd, nCmdShow);
 		m_bRunning = true;
 
