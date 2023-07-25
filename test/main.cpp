@@ -205,8 +205,6 @@ bool TestWindow()
 	cfg.iMaxWidth  = 400;
 	cfg.iMaxHeight = 400;
 
-	SetProcessDPIAware();
-
 	WindowImpl oWin;
 	std::printf("Trying to create a window...\n");
 	if (!oWin.create(cfg))
