@@ -225,7 +225,8 @@ namespace rlPixelWindow
 		virtual ~Window();
 
 		/// <summary>
-		/// Create the window.
+		/// Create the window.<para />
+		/// Sets the process DPI aware.
 		/// </summary>
 		/// <returns>Could the window be created?</returns>
 		bool create(const Config &cfg);

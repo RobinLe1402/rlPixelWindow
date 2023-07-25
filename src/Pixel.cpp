@@ -15,11 +15,11 @@ namespace rlPixelWindow
 
 		oResult.alpha = (uint8_t)std::min<uint16_t>(0xFF, (uint16_t)oBottom.alpha + oTop.alpha);
 		oResult.r     = (uint8_t)std::min<uint16_t>(0xFF,
-			uint16_t(round(dBottomVisible * oBottom.r) + round(dTopVisible * oTop.r)));
+			uint16_t(round(dBottomVisible * oBottom.r) + oTop.r));
 		oResult.g     = (uint8_t)std::min<uint16_t>(0xFF,
-			uint16_t(round(dBottomVisible * oBottom.g) + round(dTopVisible * oTop.g)));
+			uint16_t(round(dBottomVisible * oBottom.g) + oTop.g));
 		oResult.b     = (uint8_t)std::min<uint16_t>(0xFF,
-			uint16_t(round(dBottomVisible * oBottom.b) + round(dTopVisible * oTop.b)));
+			uint16_t(round(dBottomVisible * oBottom.b) + oTop.b));
 
 		return oResult;
 	}

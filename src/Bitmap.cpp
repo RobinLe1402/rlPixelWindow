@@ -19,7 +19,7 @@ namespace rlPixelWindow
 
 	Bitmap::Bitmap(const Bitmap &other) noexcept :
 		m_iWidth(other.m_iWidth), m_iHeight(other.m_iHeight),
-		m_upPixels(std::make_unique<Pixel[]>(other.m_iWidth * other.m_iHeight))
+		m_upPixels(std::make_unique<Pixel[]>((size_t)other.m_iWidth * other.m_iHeight))
 	{
 		const size_t iDataSize = (size_t)m_iWidth * m_iHeight * sizeof(Pixel);
 		memcpy_s(m_upPixels.get(), iDataSize, other.m_upPixels.get(), iDataSize);
