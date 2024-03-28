@@ -16,6 +16,7 @@
     <ProjectGuid>{5aefed80-7384-454c-93d3-d8e3ab473a3c}</ProjectGuid>
     <RootNamespace>rlPixelWindow</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>library (static)</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -38,11 +39,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="PropertySheet.StaticLib.props" />
+    <Import Project="..\cppenv\vs\lib-static.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="PropertySheet.StaticLib.props" />
+    <Import Project="..\cppenv\vs\lib-static.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
@@ -78,17 +79,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\rlPixelWindow\Bitmap.hpp" />
-    <ClInclude Include="include\rlPixelWindow\Core.hpp" />
-    <ClInclude Include="include\rlPixelWindow\Font.Windows.hpp" />
-    <ClInclude Include="include\rlPixelWindow\Pixel.hpp" />
-    <ClInclude Include="include\rlPixelWindow\Window.hpp" />
+    <ClInclude Include="..\include\rlPixelWindow\Bitmap.hpp" />
+    <ClInclude Include="..\include\rlPixelWindow\Core.hpp" />
+    <ClInclude Include="..\include\rlPixelWindow\Font.Windows.hpp" />
+    <ClInclude Include="..\include\rlPixelWindow\Pixel.hpp" />
+    <ClInclude Include="..\include\rlPixelWindow\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Bitmap.cpp" />
-    <ClCompile Include="src\Font.Windows.cpp" />
-    <ClCompile Include="src\Pixel.cpp" />
-    <ClCompile Include="src\Window.cpp" />
+    <ClCompile Include="Bitmap.cpp" />
+    <ClCompile Include="Font.Windows.cpp" />
+    <ClCompile Include="Pixel.cpp" />
+    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

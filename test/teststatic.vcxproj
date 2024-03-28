@@ -16,6 +16,7 @@
     <ProjectGuid>{c77f569a-3534-4b70-9e15-90e66876c9f0}</ProjectGuid>
     <RootNamespace>test</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>test (static)</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -38,11 +39,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\PropertySheet.StaticLib.Test.props" />
+    <Import Project="..\cppenv\vs\lib-static-test.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\PropertySheet.StaticLib.Test.props" />
+    <Import Project="..\cppenv\vs\lib-static-test.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
@@ -84,7 +85,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\rlPixelWindow.vcxproj">
+    <ProjectReference Include="..\src\static.vcxproj">
       <Project>{5aefed80-7384-454c-93d3-d8e3ab473a3c}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -95,7 +96,7 @@
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="test.rc" />
+    <ResourceCompile Include="teststatic.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\RobinLe.ico" />
